@@ -8,19 +8,24 @@
     "net8.0": []
   },
   "packageFolders": {
-    "C:\\Users\\27796\\.nuget\\packages\\": {}
+    "C:\\Users\\27796\\.nuget\\packages\\": {},
+    "D:\\MySoftwares\\Microsoft Visual Studio\\shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "F:\\Study_of_C#\\Day01\\Day01\\Day01.csproj",
+      "projectUniqueName": "F:\\All Study Repo\\Study_of_C#\\Day01\\Day01\\Day01.csproj",
       "projectName": "Day01",
-      "projectPath": "F:\\Study_of_C#\\Day01\\Day01\\Day01.csproj",
+      "projectPath": "F:\\All Study Repo\\Study_of_C#\\Day01\\Day01\\Day01.csproj",
       "packagesPath": "C:\\Users\\27796\\.nuget\\packages\\",
-      "outputPath": "F:\\Study_of_C#\\Day01\\Day01\\obj\\",
+      "outputPath": "F:\\All Study Repo\\Study_of_C#\\Day01\\Day01\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "D:\\MySoftwares\\Microsoft Visual Studio\\shared\\NuGetPackages"
+      ],
       "configFilePaths": [
         "C:\\Users\\27796\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -45,7 +50,8 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "9.0.100"
     },
     "frameworks": {
       "net8.0": {
@@ -66,7 +72,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.404/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
