@@ -1,0 +1,6 @@
+﻿  day02.cpp
+F:\C&C++\Day02\Day02\day02.cpp(6,9): warning C4477: “printf”: 格式字符串“%c”需要类型“int”的参数，但可变参数 1 拥有了类型“char *”
+F:\C&C++\Day02\Day02\day02.cpp(6,9): warning C4313: "printf": 格式字符串中的 "%c" 与类型为 "char *" 的参数 1 冲突
+F:\C&C++\Day02\Day02\day02.cpp(8,9): warning C4477: “printf”: 格式字符串“%c”需要类型“int”的参数，但可变参数 1 拥有了类型“char *”
+F:\C&C++\Day02\Day02\day02.cpp(8,9): warning C4313: "printf": 格式字符串中的 "%c" 与类型为 "char *" 的参数 1 冲突
+  Day02.vcxproj -> F:\C&C++\Day02\x64\Debug\Day02.exe

@@ -1,0 +1,34 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    height: 100vh;
+    background-color: #ccc;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+header {
+    height: 50px;
+    display: flex;
+    flex-flow: row nowrap;
+    
+
+}
+
+header div {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    flex: 1;
+}
+
+main {
+    flex: 1;
+}
+
+footer {
+    height: 30px;
+}

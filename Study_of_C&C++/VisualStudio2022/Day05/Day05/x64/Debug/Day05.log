@@ -1,0 +1,12 @@
+﻿  Day05.cpp
+F:\C&C++\Day05\Day05\Day05.cpp(55,13): warning C4473: “scanf_s”: 没有为格式字符串传递足够的参数
+      F:\C&C++\Day05\Day05\Day05.cpp(55,13):
+      占位符和其参数预计 2 可变参数，但提供的却是 1 参数
+      F:\C&C++\Day05\Day05\Day05.cpp(55,13):
+      缺失的可变参数 2 为格式字符串“%c”所需
+      F:\C&C++\Day05\Day05\Day05.cpp(55,13):
+      此参数用作缓冲区大小
+  
+F:\C&C++\Day05\Day05\Day05.cpp(44,18): warning C4101: “c3”: 未引用的局部变量
+F:\C&C++\Day05\Day05\Day05.cpp(44,14): warning C4101: “c2”: 未引用的局部变量
+  Day05.vcxproj -> F:\C&C++\Day05\x64\Debug\Day05.exe
