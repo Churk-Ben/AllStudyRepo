@@ -57,6 +57,7 @@
         "map": "cpp",
         "xtree": "cpp",
         "stdio.h": "c",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "list": "cpp"
     }
 }

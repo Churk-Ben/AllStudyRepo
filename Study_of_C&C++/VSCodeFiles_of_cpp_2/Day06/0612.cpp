@@ -11,7 +11,7 @@ int func(int n)
 int main()
 {
     int n;
-    while (scanf("%d", &n) != EOF)
+    while (cin >> n)
     {
         cout << func(n) << endl;
     }
