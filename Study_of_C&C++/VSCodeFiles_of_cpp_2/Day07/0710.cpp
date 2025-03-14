@@ -1,10 +1,10 @@
 #include <iostream>
 using namespace std;
 int cnt = 0;
-bool hang[64];
-bool lie[64];
-bool zuoxiexian[64];
-bool youxiexian[64];
+bool row[64];
+bool col[64];
+bool leftLine[64];
+bool rightLine[64];
 void dfs(int n)
 {
     if (n == 8)
@@ -12,22 +12,22 @@ void dfs(int n)
         cnt++;
         return;
     }
-    if (hang[n])
+    if (row[n])
     {
         dfs(n + 1);
     }
     for (int i = 0; i < 8; i++)
     {
 
-        if (!lie[i] && !zuoxiexian[32 + n - i] && !youxiexian[n + i])
+        if (!col[i] && !leftLine[32 + n - i] && !rightLine[n + i])
         {
-            lie[i] = true;
-            zuoxiexian[32 + n - i] = true;
-            youxiexian[n + i] = true;
+            col[i] = true;
+            leftLine[32 + n - i] = true;
+            rightLine[n + i] = true;
             dfs(n + 1);
-            lie[i] = false;
-            zuoxiexian[32 + n - i] = false;
-            youxiexian[n + i] = false;
+            col[i] = false;
+            leftLine[32 + n - i] = false;
+            rightLine[n + i] = false;
         }
     }
 }
@@ -35,10 +35,10 @@ int main()
 {
     for (int i = 0; i < 64; i++)
     {
-        hang[i] = false;
-        lie[i] = false;
-        zuoxiexian[i] = false;
-        youxiexian[i] = false;
+        row[i] = false;
+        col[i] = false;
+        leftLine[i] = false;
+        rightLine[i] = false;
     }
     for (int i = 0; i < 8; i++)
     {
@@ -48,10 +48,10 @@ int main()
             cin >> temp;
             if (temp == 1)
             {
-                hang[i] = true;
-                lie[j] = true;
-                zuoxiexian[32 + i - j] = true;
-                youxiexian[i + j] = true;
+                row[i] = true;
+                col[j] = true;
+                leftLine[32 + i - j] = true;
+                rightLine[i + j] = true;
             }
         }
     }
