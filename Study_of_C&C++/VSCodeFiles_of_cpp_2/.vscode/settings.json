@@ -55,6 +55,8 @@
         "optional": "cpp",
         "string": "cpp",
         "map": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "stdio.h": "c",
+        "sstream": "cpp"
     }
 }
