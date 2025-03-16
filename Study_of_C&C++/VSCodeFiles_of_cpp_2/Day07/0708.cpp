@@ -1,3 +1,4 @@
+// This program is to multiply two numbers using high precision multiplication.
 #include <iostream>
 #include <cstring>
 #include <algorithm>

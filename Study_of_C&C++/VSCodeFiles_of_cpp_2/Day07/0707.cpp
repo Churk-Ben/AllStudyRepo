@@ -1,3 +1,4 @@
+// This program calculates the factorial of a number using the multiplication method.
 #include <iostream>
 #include <string>
 #include <vector>

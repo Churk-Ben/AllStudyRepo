@@ -58,6 +58,12 @@
         "xtree": "cpp",
         "stdio.h": "c",
         "sstream": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "iomanip": "cpp",
+        "chrono": "cpp",
+        "forward_list": "cpp",
+        "ratio": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp"
     }
 }
