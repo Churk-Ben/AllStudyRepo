@@ -37,6 +37,25 @@ vector<int> adjust(string x)
     return res;
 }
 
+// 大整数除二
+string div2(const string &x)
+{
+    string res;
+    int carry = 0;
+    for (int i = 0; i < (int)x.size(); i++)
+    {
+        int d = x[i] - '0' + carry;
+        res += (d / 2) + '0';
+        carry = (d % 2) * 10;
+    }
+
+    size_t pos = res.find_first_not_of('0');
+    if (pos != string::npos)
+        return res.substr(pos);
+    else
+        return "0";
+}
+
 // 高精度加法
 string add(string a, string b, int scale)
 {
@@ -131,6 +150,34 @@ string fac(int n)
     {
         string temp = mul(C, to_string(i), 10);
         C = temp;
+    }
+    return C;
+}
+
+// 高精度取模
+string mod(string a, string b, int scale)
+{
+    vector<int> A, B;
+    vector<char> C;
+    A = adjust(a);
+    B = adjust(b);
+    while (compare(a, b) >= 0)
+    {
+        a = sub(a, b, scale);
+    }
+    return a;
+}
+
+// 高精度快速幂
+string pow(string a, string b)
+{
+    string C = "1";
+    while (!b.empty() && b != "0")
+    {
+        if ((b.back() - '0') % 2 == 1)
+            C = mul(C, a, 10);
+        a = mul(a, a, 10);
+        b = div2(b);
     }
     return C;
 }
@@ -237,7 +284,7 @@ int main()
 {
     string a, b;
     cin >> a >> b;
-    string C = fsub(a, b);
+    string C = pow(a, b);
     cout << C << endl;
     return 0;
 }

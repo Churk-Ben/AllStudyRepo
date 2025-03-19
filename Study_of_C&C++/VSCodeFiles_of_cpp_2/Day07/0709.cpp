@@ -4,7 +4,7 @@
 #include <algorithm>
 using namespace std;
 
-string highprecisionmultiply(string s1, string s2)
+string mul(string s1, string s2)
 {
     reverse(s1.begin(), s1.end());
     reverse(s2.begin(), s2.end());
@@ -47,9 +47,9 @@ int main()
     {
         if (n % 2 == 1)
         {
-            ans = highprecisionmultiply(ans, base);
+            ans = mul(ans, base);
         }
-        base = highprecisionmultiply(base, base);
+        base = mul(base, base);
         n = n / 2;
     }
     ans[ans.size() - 1] -= 1;
