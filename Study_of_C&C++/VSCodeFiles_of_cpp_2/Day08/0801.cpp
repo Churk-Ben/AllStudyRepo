@@ -282,9 +282,9 @@ string fsub(string a, string b)
 
 int main()
 {
-    string a, b;
-    cin >> a >> b;
-    string C = pow(a, b);
+    string a;
+    cin >> a;
+    string C = mul(a, "1", 8);
     cout << C << endl;
     return 0;
 }
