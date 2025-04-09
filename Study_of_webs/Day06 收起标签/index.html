@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>index</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #3c3c3c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .box {
+            width: 200px;
+            height: 200px;
+            background-color: #333;
+            border-radius: 10px;
+            box-shadow: 5px 5px 50px #111;
+            overflow: hidden;
+            transition: height 0.5s ease;
+        }
+
+        .hidden {
+            height: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <h3 class="catListTitle">公告</h3>
+    <div class="box" id="sidebar_news_content">这是一个可以收起的div盒子</div>
+
+    <script>
+        // 确保DOM完全加载后再执行
+        document.addEventListener('DOMContentLoaded', function () {
+            // 获取按钮元素
+            const button = document.querySelector('.catListTitle');
+
+            // 为按钮添加点击事件监听器
+            button.addEventListener('click', function () {
+                const div = document.getElementById('sidebar_news_content');
+                if (div.classList.contains('hidden')) {
+                    div.classList.remove('hidden');
+                } else {
+                    div.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
