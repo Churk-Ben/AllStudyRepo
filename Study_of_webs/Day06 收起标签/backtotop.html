@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 2000px;
+            font-family: Arial, sans-serif;
+        }
+
+        /* 回到顶部按钮样式 */
+        .back-to-top {
+            position: relative;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            display: none;
+            transition: display 0.3s;
+        }
+
+        .back-to-top:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>回到顶部按钮</h1>
+    <div>1</div>
+    <div>2</div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 创建按钮元素
+            var backToTopButton = document.createElement('button');
+            backToTopButton.className = 'back-to-top';
+            backToTopButton.innerHTML = '↑'; // 使用向上箭头作为按钮内容
+            backToTopButton.addEventListener('click', function () {
+                // 平滑滚动到页面顶部
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // 将按钮添加到 body 中
+            document.body.appendChild(backToTopButton);
+
+            // 显示和隐藏按钮的逻辑
+            window.addEventListener('scroll', function () {
+                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                    backToTopButton.style.display = 'block';
+                } else {
+                    backToTopButton.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
