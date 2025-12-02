@@ -4,23 +4,24 @@
 #include <string>
 #include <vector>
 
-class GradeCalc: private std::vector<int> {
+class GradeCalc : private std::vector<int>
+{
 public:
-    GradeCalc(const std::string &cname);      
-    void input(int n);                        // Â¼Èën¸ö³É¼¨
-    void output() const;                      // Êä³ö³É¼¨
-    void sort(bool ascending = false);        // ÅÅĞò (Ä¬ÈÏ½µĞò)
-    int min() const;                          // ·µ»Ø×îµÍ·Ö
-    int max() const;                          // ·µ»Ø×î¸ß·Ö
-    double average() const;                   // ·µ»ØÆ½¾ù·Ö
-    void info();                              // Êä³ö³É¼¨Í³¼ÆĞÅÏ¢ 
+    GradeCalc(const std::string &cname);
+    void input(int n);                 // å½•å…¥nä¸ªæˆç»©
+    void output() const;               // è¾“å‡ºæˆç»©
+    void sort(bool ascending = false); // æ’åº (é»˜è®¤é™åº)
+    int min() const;                   // è¿”å›æœ€ä½åˆ†
+    int max() const;                   // è¿”å›æœ€é«˜åˆ†
+    double average() const;            // è¿”å›å¹³å‡åˆ†
+    void info();                       // è¾“å‡ºæˆç»©ç»Ÿè®¡ä¿¡æ¯
 
 private:
-    void compute();               // ¼ÆËã³É¼¨Í³¼ÆĞÅÏ¢
+    void compute(); // è®¡ç®—æˆç»©ç»Ÿè®¡ä¿¡æ¯
 
 private:
-    std::string course_name;     // ¿Î³ÌÃû
-    std::array<int, 5> counts;   // ±£´æ¸÷·ÖÊı¶ÎÈËÊı£¨[0, 60), [60, 70), [70, 80), [80, 90), [90, 100]
-    std::array<double, 5> rates; // ±£´æ¸÷·ÖÊı¶ÎÕ¼±È
-    bool is_dirty;      // Ôà±ê¼Ç£¬¼ÇÂ¼ÊÇ·ñ³É¼¨ĞÅÏ¢ÓĞ±ä¸ü
+    std::string course_name;     // è¯¾ç¨‹å
+    std::array<int, 5> counts;   // ä¿å­˜å„åˆ†æ•°æ®µäººæ•°ï¼ˆ[0, 60), [60, 70), [70, 80), [80, 90), [90, 100]
+    std::array<double, 5> rates; // ä¿å­˜å„åˆ†æ•°æ®µå æ¯”
+    bool is_dirty;               // è„æ ‡è®°ï¼Œè®°å½•æ˜¯å¦æˆç»©ä¿¡æ¯æœ‰å˜æ›´
 };

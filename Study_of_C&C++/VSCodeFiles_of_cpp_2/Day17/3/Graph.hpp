@@ -3,44 +3,54 @@
 #include <string>
 #include <vector>
 
-enum class GraphType {circle, triangle, rectangle};
+enum class GraphType
+{
+    circle,
+    triangle,
+    rectangle
+};
 
-// GraphÀà¶¨Òå
-class Graph {
+// Graphç±»å®šä¹‰
+class Graph
+{
 public:
     virtual void draw() {}
     virtual ~Graph() = default;
 };
 
-// CircleÀàÉùÃ÷
-class Circle : public Graph {
+// Circleç±»å£°æ˜
+class Circle : public Graph
+{
 public:
     void draw();
 };
 
-// TriangleÀàÉùÃ÷
-class Triangle : public Graph {
+// Triangleç±»å£°æ˜
+class Triangle : public Graph
+{
 public:
     void draw();
 };
 
-// RectangleÀàÉùÃ÷
-class Rectangle : public Graph {
+// Rectangleç±»å£°æ˜
+class Rectangle : public Graph
+{
 public:
     void draw();
 };
 
-// CanvasÀàÉùÃ÷
-class Canvas {
+// Canvasç±»å£°æ˜
+class Canvas
+{
 public:
-    void add(const std::string& type);   // ¸ù¾İ×Ö·û´®Ìí¼ÓÍ¼ĞÎ
-    void paint() const;                  // Ê¹ÓÃÍ³Ò»½Ó¿Ú»æÖÆËùÓĞÍ¼ĞÎ
-    ~Canvas();                           // ÊÖ¶¯ÊÍ·Å×ÊÔ´
+    void add(const std::string &type); // æ ¹æ®å­—ç¬¦ä¸²æ·»åŠ å›¾å½¢
+    void paint() const;                // ä½¿ç”¨ç»Ÿä¸€æ¥å£ç»˜åˆ¶æ‰€æœ‰å›¾å½¢
+    ~Canvas();                         // æ‰‹åŠ¨é‡Šæ”¾èµ„æº
 
 private:
-    std::vector<Graph*> graphs;          
+    std::vector<Graph *> graphs;
 };
 
-// 4. ¹¤¾ßº¯Êı
-GraphType str_to_GraphType(const std::string& s);  // ×Ö·û´®×ªÃ¶¾ÙÀàĞÍ
-Graph* make_graph(const std::string& type);  // ´´½¨Í¼ĞÎ£¬·µ»Ø¶Ñ¶ÔÏóÖ¸Õë
+// 4. å·¥å…·å‡½æ•°
+GraphType str_to_GraphType(const std::string &s); // å­—ç¬¦ä¸²è½¬æšä¸¾ç±»å‹
+Graph *make_graph(const std::string &type);       // åˆ›å»ºå›¾å½¢ï¼Œè¿”å›å †å¯¹è±¡æŒ‡é’ˆ

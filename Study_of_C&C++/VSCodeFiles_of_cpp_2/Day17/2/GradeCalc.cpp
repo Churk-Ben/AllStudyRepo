@@ -8,15 +8,17 @@
 #include <vector>
 #include "GradeCalc.hpp"
 
-
-GradeCalc::GradeCalc(const std::string &cname): course_name{cname}, is_dirty{true}{
+GradeCalc::GradeCalc(const std::string &cname) : course_name{cname}, is_dirty{true}
+{
     counts.fill(0);
     rates.fill(0);
-}   
+}
 
-void GradeCalc::input(int n) {
-    if(n < 0) {
-        std::cerr << "ÎÞÐ§ÊäÈë! ÈËÊý²»ÄÜÎª¸ºÊý\n";
+void GradeCalc::input(int n)
+{
+    if (n < 0)
+    {
+        std::cerr << "æ— æ•ˆè¾“å…¥! äººæ•°ä¸èƒ½ä¸ºè´Ÿæ•°\n";
         return;
     }
 
@@ -24,99 +26,109 @@ void GradeCalc::input(int n) {
 
     int grade;
 
-    for(int i = 0; i < n;) {
+    for (int i = 0; i < n;)
+    {
         std::cin >> grade;
-        if(grade < 0 || grade > 100) {
-            std::cerr << "ÎÞÐ§ÊäÈë! ·ÖÊýÐëÔÚ[0,100]\n";
+        if (grade < 0 || grade > 100)
+        {
+            std::cerr << "æ— æ•ˆè¾“å…¥! åˆ†æ•°é¡»åœ¨[0,100]\n";
             continue;
         }
 
         this->push_back(grade);
         ++i;
-    } 
+    }
 
     is_dirty = true;
-}  
+}
 
-void GradeCalc::output() const {
-    for(auto grade: *this)
+void GradeCalc::output() const
+{
+    for (auto grade : *this)
         std::cout << grade << ' ';
     std::cout << std::endl;
-} 
+}
 
-void GradeCalc::sort(bool ascending) {
-    if(ascending)
+void GradeCalc::sort(bool ascending)
+{
+    if (ascending)
         std::sort(this->begin(), this->end());
     else
         std::sort(this->begin(), this->end(), std::greater<int>());
-}  
+}
 
-int GradeCalc::min() const {
-    if(this->empty())
+int GradeCalc::min() const
+{
+    if (this->empty())
         return -1;
 
     return *std::min_element(this->begin(), this->end());
-}  
+}
 
-int GradeCalc::max() const {
-    if(this->empty())
+int GradeCalc::max() const
+{
+    if (this->empty())
         return -1;
 
     return *std::max_element(this->begin(), this->end());
-}    
+}
 
-double GradeCalc::average() const {
-    if(this->empty())
+double GradeCalc::average() const
+{
+    if (this->empty())
         return 0.0;
 
     double avg = std::accumulate(this->begin(), this->end(), 0.0) / this->size();
     return avg;
-}   
-
-void GradeCalc::info() {
-    if(is_dirty) 
-        compute();
-
-    std::cout << "¿Î³ÌÃû³Æ:\t" << course_name << std::endl;
-    std::cout << "Æ½¾ù·Ö:\t" << std::fixed << std::setprecision(2) << average() << std::endl;
-    std::cout << "×î¸ß·Ö:\t" << max() << std::endl;
-    std::cout << "×îµÍ·Ö:\t" << min() << std::endl;
-
-    const std::array<std::string, 5> grade_range{"[0, 60) ", 
-                                           "[60, 70)", 
-                                           "[70, 80)",
-                                           "[80, 90)", 
-                                           "[90, 100]"};
-    
-    for(int i = static_cast<int>(grade_range.size())-1; i >= 0; --i)
-        std::cout << grade_range[i] << "\t: " << counts[i] << "ÈË\t"
-                  << std::fixed << std::setprecision(2) << rates[i]*100 << "%\n";
 }
 
-void GradeCalc::compute() {
-    if(this->empty())
+void GradeCalc::info()
+{
+    if (is_dirty)
+        compute();
+
+    std::cout << "è¯¾ç¨‹åç§°:\t" << course_name << std::endl;
+    std::cout << "å¹³å‡åˆ†:\t" << std::fixed << std::setprecision(2) << average() << std::endl;
+    std::cout << "æœ€é«˜åˆ†:\t" << max() << std::endl;
+    std::cout << "æœ€ä½Žåˆ†:\t" << min() << std::endl;
+
+    const std::array<std::string, 5> grade_range{"[0, 60) ",
+                                                 "[60, 70)",
+                                                 "[70, 80)",
+                                                 "[80, 90)",
+                                                 "[90, 100]"};
+
+    for (int i = static_cast<int>(grade_range.size()) - 1; i >= 0; --i)
+        std::cout << grade_range[i] << "\t: " << counts[i] << "äºº\t"
+                  << std::fixed << std::setprecision(2) << rates[i] * 100 << "%\n";
+}
+
+void GradeCalc::compute()
+{
+    if (this->empty())
         return;
-    
+
     counts.fill(0);
     rates.fill(0);
 
-    // Í³¼Æ¸÷·ÖÊý¶ÎÈËÊý
-    for(int grade: *this) {
-        if(grade < 60)
-            ++counts[0];        // [0, 60)
+    // ç»Ÿè®¡å„åˆ†æ•°æ®µäººæ•°
+    for (int grade : *this)
+    {
+        if (grade < 60)
+            ++counts[0]; // [0, 60)
         else if (grade < 70)
-            ++counts[1];        // [60, 70)
+            ++counts[1]; // [60, 70)
         else if (grade < 80)
-            ++counts[2];        // [70, 80)
+            ++counts[2]; // [70, 80)
         else if (grade < 90)
-            ++counts[3];        // [80, 90)
+            ++counts[3]; // [80, 90)
         else
-            ++counts[4];        // [90, 100]
+            ++counts[4]; // [90, 100]
     }
 
-    // Í³¼Æ¸÷·ÖÊý¶Î±ÈÀý
-    for(size_t i = 0; i < rates.size(); ++i)
+    // ç»Ÿè®¡å„åˆ†æ•°æ®µæ¯”ä¾‹
+    for (size_t i = 0; i < rates.size(); ++i)
         rates[i] = counts[i] * 1.0 / this->size();
-    
+
     is_dirty = false;
 }

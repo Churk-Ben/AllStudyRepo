@@ -5,57 +5,68 @@
 
 #include "Graph.hpp"
 
-// CircleÀàÊµÏÖ
-void Circle::draw()     { std::cout << "draw a circle...\n"; }
+// Circleç±»å®ç°
+void Circle::draw() { std::cout << "draw a circle...\n"; }
 
-// TriangleÀàÊµÏÖ
-void Triangle::draw()   { std::cout << "draw a triangle...\n"; }
+// Triangleç±»å®ç°
+void Triangle::draw() { std::cout << "draw a triangle...\n"; }
 
-// RectangleÀàÊµÏÖ
-void Rectangle::draw()  { std::cout << "draw a rectangle...\n"; }
+// Rectangleç±»å®ç°
+void Rectangle::draw() { std::cout << "draw a rectangle...\n"; }
 
-// CanvasÀàÊµÏÖ
-void Canvas::add(const std::string& type) {
-    Graph* g = make_graph(type);
-    if (g) 
+// Canvasç±»å®ç°
+void Canvas::add(const std::string &type)
+{
+    Graph *g = make_graph(type);
+    if (g)
         graphs.push_back(g);
 }
 
-void Canvas::paint() const {
-    for (Graph* g : graphs) 
-        g->draw();   
+void Canvas::paint() const
+{
+    for (Graph *g : graphs)
+        g->draw();
 }
 
-Canvas::~Canvas() {
-    for (Graph* g : graphs) 
+Canvas::~Canvas()
+{
+    for (Graph *g : graphs)
         delete g;
 }
 
-// ¹¤¾ßº¯ÊıÊµÏÖ
-// ×Ö·û´® ¡ú Ã¶¾Ù×ª»»
-GraphType str_to_GraphType(const std::string& s) {
+// å·¥å…·å‡½æ•°å®ç°
+// å­—ç¬¦ä¸² â†’ æšä¸¾è½¬æ¢
+GraphType str_to_GraphType(const std::string &s)
+{
     std::string t = s;
     std::transform(s.begin(), s.end(), t.begin(),
-                   [](unsigned char c) { return std::tolower(c);});
+                   [](unsigned char c)
+                   { return std::tolower(c); });
 
-    if (t == "circle")   
+    if (t == "circle")
         return GraphType::circle;
 
-    if (t == "triangle") 
+    if (t == "triangle")
         return GraphType::triangle;
 
     if (t == "rectangle")
         return GraphType::rectangle;
 
-    return GraphType::circle;   // È±Ê¡·µ»Ø
+    return GraphType::circle; // ç¼ºçœè¿”å›
 }
 
-// ´´½¨Í¼ĞÎ£¬·µ»Ø¶Ñ¶ÔÏóÖ¸Õë
-Graph* make_graph(const std::string& type) {
-    switch (str_to_GraphType(type)) {
-    case GraphType::circle:     return new Circle;
-    case GraphType::triangle:   return new Triangle;
-    case GraphType::rectangle:  return new Rectangle;
-    default: return nullptr;
+// åˆ›å»ºå›¾å½¢ï¼Œè¿”å›å †å¯¹è±¡æŒ‡é’ˆ
+Graph *make_graph(const std::string &type)
+{
+    switch (str_to_GraphType(type))
+    {
+    case GraphType::circle:
+        return new Circle;
+    case GraphType::triangle:
+        return new Triangle;
+    case GraphType::rectangle:
+        return new Rectangle;
+    default:
+        return nullptr;
     }
 }

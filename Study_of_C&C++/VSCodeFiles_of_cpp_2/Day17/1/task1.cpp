@@ -2,23 +2,25 @@
 #include <string>
 #include "GradeCalc.hpp"
 
-void test() {
+void test()
+{
     GradeCalc c1("OOP");
 
-    std::cout << "Â¼Èë³É¼¨:\n";
+    std::cout << "å½•å…¥æˆç»©:\n";
     c1.input(5);
 
-    std::cout << "Êä³ö³É¼¨:\n";
+    std::cout << "è¾“å‡ºæˆç»©:\n";
     c1.output();
 
-    std::cout << "ÅÅÐòºó³É¼¨:\n";
-    c1.sort(); c1.output();
+    std::cout << "æŽ’åºåŽæˆç»©:\n";
+    c1.sort();
+    c1.output();
 
-    std::cout << "*************³É¼¨Í³¼ÆÐÅÏ¢*************\n";
+    std::cout << "*************æˆç»©ç»Ÿè®¡ä¿¡æ¯*************\n";
     c1.info();
-
 }
 
-int main() {
+int main()
+{
     test();
 }
