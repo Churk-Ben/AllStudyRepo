@@ -63,6 +63,9 @@
                 "xlocnum": "cpp",
                 "xstring": "cpp",
                 "xmemory": "cpp",
-                "xutility": "cpp"
+                "xutility": "cpp",
+                "cstdint": "cpp",
+                "unordered_map": "cpp",
+                "numeric": "cpp"
         }
 }
