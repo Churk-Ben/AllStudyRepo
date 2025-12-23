@@ -1,7 +1,8 @@
 #include "student.hpp"
 #include <iomanip>
 
-std::ostream& operator<<(std::ostream& os, const Student& s) {
+std::ostream &operator<<(std::ostream &os, const Student &s)
+{
     os << std::left
        << std::setw(10) << s.id
        << std::setw(10) << s.name
@@ -10,8 +11,8 @@ std::ostream& operator<<(std::ostream& os, const Student& s) {
     return os;
 }
 
-std::istream& operator>>(std::istream& is, Student& s) {
+std::istream &operator>>(std::istream &is, Student &s)
+{
     is >> s.id >> s.name >> s.major >> s.grade;
     return is;
 }
-
