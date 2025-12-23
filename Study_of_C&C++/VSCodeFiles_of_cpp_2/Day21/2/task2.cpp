@@ -22,7 +22,11 @@ void app() {
     while(true) {
         menu();
         int choice;
-        std::cin >> choice;
+        if (!(std::cin >> choice)) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            choice = 0;
+        }
 
         try {
             switch (choice) {

@@ -8,8 +8,8 @@ public:
     Student() = default;
     ~Student() = default;
     
-    const std::string get_major() const;
-    int get_grade() const;
+    const std::string& get_major() const { return major; }
+    int get_grade() const { return grade; }
 
     friend std::ostream& operator<<(std::ostream& os, const Student& s);
     friend std::istream& operator>>(std::istream& is, Student& s);
