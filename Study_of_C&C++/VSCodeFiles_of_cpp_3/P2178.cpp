@@ -1,8 +1,5 @@
-#include <iostream>
-#include <queue>
-#include <string>
-#include <vector>
-
+#pragma GCC optimize("Ofast")
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -13,6 +10,9 @@ struct Task {
 };
 
 int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
   int N, Q, t = 0;
   queue<Task> q;
   vector<Task> p;
@@ -35,7 +35,7 @@ int main() {
     } else {
       cur.spent = t + cur.needed;
       t += cur.needed;
-      p.push_back(cur);
+      p.emplace_back(cur);
       q.pop();
     }
   }
