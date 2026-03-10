@@ -1,0 +1,1 @@
+INSERT INTO `studio_info` (`id`, `name`, `description`, `logo_url`, `contact_email`, `github_url`, `updated_at`) VALUES ('1', 'JuFire Studio', '一个专注于创新和技术的游戏创意工作室', NULL, 'contact@jufirex.com', 'https://github.com/JuFireX', '2025-08-16 15:34:56.388860');

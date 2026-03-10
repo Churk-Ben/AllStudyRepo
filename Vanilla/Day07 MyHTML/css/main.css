@@ -1,0 +1,56 @@
+/* 1. 首先, 清除内外边距, 设置box为border-box <!important> */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    text-decoration: none;
+}
+
+/* 2. 伪类的属性会从主属性继承, 不用多写 */
+a:hover {
+    color: #888888;
+}
+
+nav {
+    /* 3. 非必要不使用absolute定位 */
+    /* position: absolute; */
+    /* width: 100px; */
+    box-shadow: 1px 1px 5px #888888;
+    background-color: #ffffff;
+    z-index: 100;
+    /* 9. 一定要先display flex才能使用牙 */
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 4. 不可以直接对div盒子使用样式 */
+/* div { */
+.navbox {
+    /* 5. flex伸缩属性尽量不要手动设置 */
+    /* flex: 1; */
+    /* 6. 一般情况下width height可以使用自动挡 */
+    /* width: 40px; */
+    /* height: 40px; */
+    background-color: #eee;
+    padding: 0 20px;
+    /* 7. 行高应该使用em/rem单位 */
+    line-height: 1.2em;
+    /* 8. 这个属于杂揉了, 这是grid布局的 */
+    /* vertical-align: baseline; */
+}
+
+/* .menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+} */
