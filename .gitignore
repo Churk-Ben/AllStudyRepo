@@ -158,3 +158,6 @@ password.txt
 # ==========================================
 *.zip
 backend/version.json
+
+
+output/
