@@ -1,0 +1,15 @@
+2
+C++ Primer
+Stanley B. Lippman
+Wang
+978-7-121-15535-2
+128.0
+100.0
+500
+Effective C++
+Scott Meyers
+Hou
+978-7-121-12332-0
+65.0
+50.0
+300

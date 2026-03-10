@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超级椭圆（平滑圆角矩形）</title>
+    <style>
+        .superellipse {
+            display: block;
+            margin: 20px auto;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .flex-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="flex-item">
+            <svg width="200" height="200" class="superellipse"></svg>
+            <p>第一个超级椭圆</p>
+        </div>
+        <div class="flex-item">
+            <svg width="300" height="150" class="superellipse"></svg>
+            <p>第二个超级椭圆</p>
+        </div>
+    </div>
+
+    <script>
+        // 超级椭圆参数
+        const n = 4;   // n=2是椭圆，n越大越接近矩形，n=4很平滑
+        const steps = 100;
+
+        function superellipsePath(a, b, n, steps) {
+            let path = '';
+            for (let i = 0; i <= steps; i++) {
+                const theta = (2 * Math.PI * i) / steps;
+                const cos = Math.cos(theta);
+                const sin = Math.sin(theta);
+                const x = a * Math.sign(cos) * Math.pow(Math.abs(cos), 2 / n) + a;
+                const y = b * Math.sign(sin) * Math.pow(Math.abs(sin), 2 / n) + b;
+                path += (i === 0 ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+            }
+            path += 'Z';
+            return path;
+        }
+
+        // 获取所有superellipse类的元素并应用效果
+        document.querySelectorAll('.superellipse').forEach(svg => {
+            const a = svg.width.baseVal.value / 2;
+            const b = svg.height.baseVal.value / 2;
+            svg.innerHTML = `<path d="${superellipsePath(a, b, n, steps)}" fill="#4a90e2"/>`;
+        });
+    </script>
+</body>
+
+</html>
