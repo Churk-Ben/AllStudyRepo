@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>动态波浪效果</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            background: linear-gradient(to bottom, #1e3c72, #2a5298);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wave-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+
+        .wave {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
+            animation: waveMove 6s infinite linear alternate;
+            clip-path: path("M0,100 C50,0 150,200 200,100 L200,200 L0,200 Z");
+        }
+
+        .wave:nth-child(2) {
+            top: 10px;
+            animation-delay: 3s;
+            opacity: 0.6;
+            clip-path: path("M0,100 C60,20 140,180 200,100 L200,200 L0,200 Z");
+        }
+
+        @keyframes waveMove {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wave-container">
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+</body>
+
+</html>

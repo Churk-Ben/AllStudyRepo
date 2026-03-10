@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        a span::after{
+            transition: all .5s;
+        }
+
+        a:hover span::after{
+            content: "111";
+        }
+    </style>
+</head>
+
+<body>
+    <a href="#"><span>test</span></a>
+</body>
+
+</html>

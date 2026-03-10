@@ -1,0 +1,45 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "F:\\Study_of_C\u0026C\u002B\u002B\\VisualStudio2022\\Day01\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{4845B8C2-14DE-48B6-B6E9-F82706DD4151}|Project1\\Project1.vcxproj|F:\\Study_of_C\u0026C\u002B\u002B\\VisualStudio2022\\Day01\\Project1\\day01.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{4845B8C2-14DE-48B6-B6E9-F82706DD4151}|Project1\\Project1.vcxproj|solutionrelative:Project1\\day01.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{25f7e850-ffa1-11d0-b63f-00a0c922e851}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "day01.cpp",
+              "DocumentMoniker": "F:\\Study_of_C\u0026C\u002B\u002B\\VisualStudio2022\\Day01\\Project1\\day01.cpp",
+              "RelativeDocumentMoniker": "Project1\\day01.cpp",
+              "ToolTip": "F:\\Study_of_C\u0026C\u002B\u002B\\VisualStudio2022\\Day01\\Project1\\day01.cpp",
+              "RelativeToolTip": "Project1\\day01.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-09-11T06:09:12.434Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

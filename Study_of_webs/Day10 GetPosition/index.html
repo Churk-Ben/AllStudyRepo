@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7MA出行</title>
+
+    <style>
+        /* ...（之前的CSS样式保持不变）... */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        #content {
+            text-align: center;
+            padding: 40px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        #locationInfo {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        button {
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* 添加用于显示二维码图像的样式 */
+        #qrCodeImage {
+            margin: 40px 0;
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="content">
+        <h1>生成位置二维码</h1>
+        <button id="getLocationButton">生成</button>
+        <div id="qrCodeImageContainer">
+            <!-- 二维码图像将显示在这里 -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('getLocationButton').addEventListener('click', function () {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPositionAndGenerateQRCode, showError);
+            } else {
+                document.getElementById('qrCodeImageContainer').innerHTML = "<p>您的浏览器不支持地理定位。</p>";
+            }
+        });
+
+        function showPositionAndGenerateQRCode(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const locationText = `纬度: ${latitude}, 经度: ${longitude}`;
+            const qrCodeUrl = `https://api.qrtool.cn?text=${encodeURIComponent(locationText)}`;
+
+            // 使用fetch从API获取二维码图像
+            fetch(qrCodeUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const qrCodeImage = document.createElement('img');
+                    qrCodeImage.src = URL.createObjectURL(blob);
+                    document.getElementById('qrCodeImageContainer').innerHTML = ''; // 清空容器
+                    document.getElementById('qrCodeImageContainer').appendChild(qrCodeImage);
+                })
+                .catch(error => {
+                    console.error('There has been a problem with your fetch operation:', error);
+                    document.getElementById('qrCodeImageContainer').innerHTML = "<p>无法生成二维码，请稍后再试。</p>";
+                });
+        }
+
+        function showError(error) {
+            // ...（之前的错误处理代码保持不变）...
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    document.getElementById('locationInfo').textContent = "用户拒绝请求地理定位。";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    document.getElementById('locationInfo').textContent = "位置信息不可用。";
+                    break;
+                case error.TIMEOUT:
+                    document.getElementById('locationInfo').textContent = "请求用户地理位置超时。";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    document.getElementById('locationInfo').textContent = "发生未知错误。";
+                    break;
+            }
+            document.getElementById('qrCodeImageContainer').innerHTML = `<p>${getErrorMessage(error.code)}</p>`;
+        }
+
+        function getErrorMessage(code) {
+            switch (code) {
+                case error.PERMISSION_DENIED:
+                    return "用户拒绝请求地理定位。";
+                case error.POSITION_UNAVAILABLE:
+                    return "位置信息不可用。";
+                case error.TIMEOUT:
+                    return "请求用户地理位置超时。";
+                case error.UNKNOWN_ERROR:
+                    return "发生未知错误。";
+                default:
+                    return "发生错误。";
+            }
+        }
+    </script>
+</body>
+
+</html>
