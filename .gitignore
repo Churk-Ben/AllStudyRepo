@@ -101,6 +101,10 @@ static/
 .cursorignore
 .cursorindexingignore
 
+# vs
+.vscode/
+.vs/
+
 # ==========================================
 # OS Generated Files
 # ==========================================
@@ -161,3 +165,4 @@ backend/version.json
 
 
 output/
+
