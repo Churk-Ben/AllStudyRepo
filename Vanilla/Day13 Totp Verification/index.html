@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账户安全闭环系统 | Account Security Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.1.4/otpauth.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .security-ring {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .security-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .security-ring circle {
+            fill: none;
+            stroke-width: 8;
+        }
+
+        .security-ring .bg {
+            stroke: rgba(255, 255, 255, 0.1);
+        }
+
+        .security-ring .progress {
+            stroke: #10b981;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .otp-input {
+            width: 48px;
+            height: 56px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.8);
+            color: white;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .otp-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            outline: none;
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translate3d(-1px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(2px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-4px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(4px, 0, 0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .password-strength {
+            height: 4px;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .timer-bar {
+            height: 3px;
+            background: #10b981;
+            transition: width 1s linear;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+
+<body class="text-slate-200 min-h-screen flex flex-col">
+
+    <!-- 导航栏 -->
+    <nav class="glass-panel sticky top-0 z-50 border-b border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white text-lg"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight">SecureAuth<span
+                            class="text-blue-400">Pro</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="authStatus"
+                        class="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700">
+                        <span class="w-2 h-2 rounded-full bg-red-500" id="statusDot"></span>
+                        <span class="text-sm font-medium" id="statusText">未登录</span>
+                    </div>
+                    <button onclick="showSection('dashboard')" id="userMenuBtn"
+                        class="hidden w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center hover:scale-105 transition-transform">
+                        <i class="fas fa-user text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+
+        <!-- 仪表盘 (登录后显示) -->
+        <section id="dashboard" class="hidden fade-in space-y-6">
+            <div class="glass-panel rounded-2xl p-6 border border-slate-700">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2">安全仪表盘</h2>
+                        <p class="text-slate-400">管理您的账户安全设置</p>
+                    </div>
+                    <div class="security-ring">
+                        <svg width="120" height="120">
+                            <circle class="bg" cx="60" cy="60" r="52"></circle>
+                            <circle class="progress" cx="60" cy="60" r="52" stroke-dasharray="326.73"
+                                stroke-dashoffset="32.67"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center flex-col">
+                            <span class="text-2xl font-bold text-emerald-400">90%</span>
+                            <span class="text-xs text-slate-400">安全评分</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-blue-500/50 transition-colors cursor-pointer"
+                        onclick="showSection('totp-setup')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">双因素认证</h3>
+                                <p class="text-xs text-slate-400" id="totpStatusText">未启用</p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-500">使用 Google Authenticator 增强安全性</div>
+                    </div>
+
+                    <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-purple-500/50 transition-colors cursor-pointer"
+                        onclick="showSection('change-password')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">修改密码</h3>
+                                <p class="text-xs text-slate-400">上次修改: 30天前</p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-500">定期更换密码保护账户</div>
+                    </div>
+
+                    <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-emerald-500/50 transition-colors cursor-pointer"
+                        onclick="showSection('email-verify')">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">邮箱验证</h3>
+                                <p class="text-xs text-emerald-400" id="emailVerifyStatus">已验证</p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-500">确保邮箱可接收安全通知</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-slate-700">
+                    <button onclick="logout()"
+                        class="w-full sm:w-auto px-6 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/30 transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>安全退出</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 活动日志 -->
+            <div class="glass-panel rounded-2xl p-6 border border-slate-700">
+                <h3 class="font-bold mb-4 flex items-center gap-2">
+                    <i class="fas fa-history text-blue-400"></i>
+                    最近活动
+                </h3>
+                <div class="space-y-3" id="activityLog">
+                    <div
+                        class="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium">成功登录</div>
+                                <div class="text-xs text-slate-500">IP: 192.168.1.1 • Chrome on Windows</div>
+                            </div>
+                        </div>
+                        <span class="text-xs text-slate-500">刚刚</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 登录模块 -->
+        <section id="login" class="fade-in max-w-md mx-auto">
+            <div class="glass-panel rounded-2xl p-8 border border-slate-700 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                        <i class="fas fa-fingerprint text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">欢迎回来</h2>
+                    <p class="text-slate-400 text-sm">请输入您的凭证以继续</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">邮箱地址</label>
+                        <div class="relative">
+                            <i class="fas fa-envelope absolute left-4 top-3.5 text-slate-500"></i>
+                            <input type="email" id="loginEmail" required
+                                class="w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-white placeholder-slate-500"
+                                placeholder="name@company.com">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">密码</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-4 top-3.5 text-slate-500"></i>
+                            <input type="password" id="loginPassword" required
+                                class="w-full pl-11 pr-12 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-white placeholder-slate-500"
+                                placeholder="••••••••">
+                            <button type="button" onclick="togglePassword('loginPassword', this)"
+                                class="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox"
+                                class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500/20">
+                            <span class="text-slate-400">记住我</span>
+                        </label>
+                        <button type="button" onclick="showSection('forgot-password')"
+                            class="text-blue-400 hover:text-blue-300 transition-colors">
+                            忘记密码?
+                        </button>
+                    </div>
+
+                    <button type="submit" id="loginBtn"
+                        class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+                        <span>安全登录</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-slate-400 text-sm">
+                        还没有账户?
+                        <button onclick="showSection('register')"
+                            class="text-blue-400 hover:text-blue-300 font-medium ml-1">立即注册</button>
+                    </p>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-slate-700">
+                    <div class="text-xs text-slate-500 text-center mb-3">其他登录方式</div>
+                    <div class="flex justify-center gap-3">
+                        <button
+                            class="w-10 h-10 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center hover:bg-slate-700 transition-colors">
+                            <i class="fab fa-google text-red-400"></i>
+                        </button>
+                        <button
+                            class="w-10 h-10 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center hover:bg-slate-700 transition-colors">
+                            <i class="fab fa-github text-white"></i>
+                        </button>
+                        <button
+                            class="w-10 h-10 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center hover:bg-slate-700 transition-colors">
+                            <i class="fab fa-microsoft text-blue-400"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOTP验证 (登录第二步) -->
+        <section id="totp-verify" class="hidden fade-in max-w-md mx-auto">
+            <div class="glass-panel rounded-2xl p-8 border border-slate-700 shadow-2xl">
+                <div class="text-center mb-6">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <i class="fas fa-mobile-alt text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">双因素认证</h2>
+                    <p class="text-slate-400 text-sm">请输入验证器应用中的6位验证码</p>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex justify-center gap-2 mb-4" id="totpInputs">
+                        <input type="text" maxlength="1" class="otp-input" data-index="0"
+                            oninput="handleTOTPInput(this, 0)" onkeydown="handleTOTPKeydown(event, 0)">
+                        <input type="text" maxlength="1" class="otp-input" data-index="1"
+                            oninput="handleTOTPInput(this, 1)" onkeydown="handleTOTPKeydown(event, 1)">
+                        <input type="text" maxlength="1" class="otp-input" data-index="2"
+                            oninput="handleTOTPInput(this, 2)" onkeydown="handleTOTPKeydown(event, 2)">
+                        <input type="text" maxlength="1" class="otp-input" data-index="3"
+                            oninput="handleTOTPInput(this, 3)" onkeydown="handleTOTPKeydown(event, 3)">
+                        <input type="text" maxlength="1" class="otp-input" data-index="4"
+                            oninput="handleTOTPInput(this, 4)" onkeydown="handleTOTPKeydown(event, 4)">
+                        <input type="text" maxlength="1" class="otp-input" data-index="5"
+                            oninput="handleTOTPInput(this, 5)" onkeydown="handleTOTPKeydown(event, 5)">
+                    </div>
+                    <div class="timer-bar w-full mb-2" id="totpTimer" style="width: 100%"></div>
+                    <p class="text-center text-xs text-slate-500">验证码将在 <span id="timerText">30</span> 秒后过期</p>
+                </div>
+
+                <button onclick="verifyTOTP()" id="verifyTotpBtn"
+                    class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/25 transition-all mb-4">
+                    验证并登录
+                </button>
+
+                <div class="text-center space-y-2">
+                    <button onclick="showSection('login')"
+                        class="text-sm text-slate-400 hover:text-slate-300 flex items-center justify-center gap-2 mx-auto">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        返回登录
+                    </button>
+                    <p class="text-xs text-slate-500">
+                        无法访问验证器? <button onclick="useBackupCode()" class="text-blue-400 hover:underline">使用备用码</button>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 注册模块 -->
+        <section id="register" class="hidden fade-in max-w-md mx-auto">
+            <div class="glass-panel rounded-2xl p-8 border border-slate-700 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                        <i class="fas fa-user-plus text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">创建账户</h2>
+                    <p class="text-slate-400 text-sm">开始您的安全之旅</p>
+                </div>
+
+                <!-- 步骤指示器 -->
+                <div class="flex justify-between mb-8 relative">
+                    <div class="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-700 -z-10"></div>
+                    <div class="step-indicator w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold step-active"
+                        data-step="1">1</div>
+                    <div class="step-indicator w-8 h-8 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center text-sm font-bold"
+                        data-step="2">2</div>
+                    <div class="step-indicator w-8 h-8 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center text-sm font-bold"
+                        data-step="3">3</div>
+                </div>
+
+                <!-- 步骤1: 基本信息 -->
+                <div id="regStep1" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">用户名</label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-4 top-3.5 text-slate-500"></i>
+                            <input type="text" id="regUsername" required
+                                class="w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-white"
+                                placeholder="johndoe">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">邮箱地址</label>
+                        <div class="relative">
+                            <i class="fas fa-envelope absolute left-4 top-3.5 text-slate-500"></i>
+                            <input type="email" id="regEmail" required
+                                class="w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-white"
+                                placeholder="name@company.com">
+                        </div>
+                    </div>
+
+                    <button onclick="nextRegStep(2)"
+                        class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 transition-all">
+                        下一步
+                    </button>
+                </div>
+
+                <!-- 步骤2: 密码设置 -->
+                <div id="regStep2" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">设置密码</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-4 top-3.5 text-slate-500"></i>
+                            <input type="password" id="regPassword" required oninput="checkPasswordStrength(this.value)"
+                                class="w-full pl-11 pr-12 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-white"
+                                placeholder="••••••••">
+                            <button type="button" onclick="togglePassword('regPassword', this)"
+                                class="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <!-- 密码强度指示器 -->
+                        <div class="mt-3 space-y-2">
+                            <div class="flex gap-1">
+                                <div class="flex-1 h-1 rounded-full bg-slate-700 transition-colors" id="strength1">
+                                </div>
+                                <div class="flex-1 h-1 rounded-full bg-slate-700 transition-colors" id="strength2">
+                                </div>
+                                <div class="flex-1 h-1 rounded-full bg-slate-700 transition-colors" id="strength3">
+                                </div>
+                                <div class="flex-1 h-1 rounded-full bg-slate-700 transition-colors" id="strength4">
+                                </div>
+                            </div>
+                            <ul class="text-xs space-y-1 text-slate-500">
+                                <li id="reqLength"><i class="fas fa-circle text-[6px] mr-2"></i>至少8个字符</li>
+                                <li id="reqUpper"><i class="fas fa-circle text-[6px] mr-2"></i>包含大写字母</li>
+                                <li id="reqNumber"><i class="fas fa-circle text-[6px] mr-2"></i>包含数字</li>
+                                <li id="reqSpecial"><i class="fas fa-circle text-[6px] mr-2"></i>包含特殊字符</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">确认密码</label>
+                        <input type="password" id="regPasswordConfirm" required
+                            class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-white"
+                            placeholder="••••••••">
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button onclick="prevRegStep(1)"
+                            class="flex-1 py-3.5 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all">
+                            返回
+                        </button>
+                        <button onclick="nextRegStep(3)"
+                            class="flex-1 py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 transition-all">
+                            下一步
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤3: 邮箱验证 -->
+                <div id="regStep3" class="hidden space-y-4">
+                    <div class="text-center py-4">
+                        <div
+                            class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse">
+                            <i class="fas fa-envelope-open-text text-3xl text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">验证您的邮箱</h3>
+                        <p class="text-sm text-slate-400 mb-4">我们已向 <span id="displayEmail"
+                                class="text-white font-medium"></span> 发送了验证码</p>
+
+                        <div class="flex justify-center gap-2 mb-4">
+                            <input type="text" maxlength="6" id="emailCode"
+                                class="w-48 px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl text-center text-2xl tracking-[0.5em] font-bold focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all text-white"
+                                placeholder="000000">
+                        </div>
+
+                        <p class="text-xs text-slate-500 mb-4">
+                            未收到邮件? <button onclick="resendCode()" class="text-emerald-400 hover:underline"
+                                id="resendBtn">重新发送 (60s)</button>
+                        </p>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button onclick="prevRegStep(2)"
+                            class="flex-1 py-3.5 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-all">
+                            返回
+                        </button>
+                        <button onclick="completeRegistration()"
+                            class="flex-1 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/25 transition-all">
+                            完成注册
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <p class="text-slate-400 text-sm">
+                        已有账户?
+                        <button onclick="showSection('login')"
+                            class="text-purple-400 hover:text-purple-300 font-medium ml-1">立即登录</button>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 忘记密码 -->
+        <section id="forgot-password" class="hidden fade-in max-w-md mx-auto">
+            <div class="glass-panel rounded-2xl p-8 border border-slate-700 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <i class="fas fa-key text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">重置密码</h2>
+                    <p class="text-slate-400 text-sm">我们将向您的邮箱发送重置链接</p>
+                </div>
+
+                <form id="forgotForm" onsubmit="handleForgotPassword(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">注册邮箱</label>
+                        <div class="relative">
+                            <i class="fas fa-envelope absolute left-4 top-3.5 text-slate-500"></i>
+                            <input type="email" required
+                                class="w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-white"
+                                placeholder="name@company.com">
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full py-3.5 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/25 transition-all">
+                        发送重置链接
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <button onclick="showSection('login')"
+                        class="text-sm text-slate-400 hover:text-slate-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        返回登录
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOTP设置 -->
+        <section id="totp-setup" class="hidden fade-in max-w-2xl mx-auto">
+            <div class="glass-panel rounded-2xl p-8 border border-slate-700 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                        <i class="fas fa-shield-alt text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">设置双因素认证</h2>
+                    <p class="text-slate-400 text-sm">增强您账户的安全性</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                            <h3 class="font-semibold mb-3 flex items-center gap-2">
+                                <span
+                                    class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">1</span>
+                                下载验证器
+                            </h3>
+                            <p class="text-sm text-slate-400 mb-3">推荐使用以下应用:</p>
+                            <div class="flex gap-2">
+                                <div class="flex-1 bg-slate-900 rounded-lg p-3 text-center border border-slate-700">
+                                    <i class="fab fa-google text-2xl text-blue-400 mb-1"></i>
+                                    <div class="text-xs">Google</div>
+                                </div>
+                                <div class="flex-1 bg-slate-900 rounded-lg p-3 text-center border border-slate-700">
+                                    <i class="fas fa-shield-alt text-2xl text-purple-400 mb-1"></i>
+                                    <div class="text-xs">Authy</div>
+                                </div>
+                                <div class="flex-1 bg-slate-900 rounded-lg p-3 text-center border border-slate-700">
+                                    <i class="fab fa-microsoft text-2xl text-blue-300 mb-1"></i>
+                                    <div class="text-xs">Microsoft</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                            <h3 class="font-semibold mb-3 flex items-center gap-2">
+                                <span
+                                    class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">2</span>
+                                扫描二维码
+                            </h3>
+                            <p class="text-sm text-slate-400">或手动输入密钥:</p>
+                            <div
+                                class="mt-2 p-3 bg-slate-900 rounded-lg border border-slate-700 flex items-center justify-between">
+                                <code id="totpSecret" class="text-emerald-400 text-sm font-mono break-all"></code>
+                                <button onclick="copySecret()"
+                                    class="text-slate-400 hover:text-white transition-colors">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                            <h3 class="font-semibold mb-3 flex items-center gap-2">
+                                <span
+                                    class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">3</span>
+                                验证设置
+                            </h3>
+                            <div class="flex gap-2 mb-3">
+                                <input type="text" maxlength="6" id="setupTotpCode"
+                                    class="flex-1 px-4 py-2 bg-slate-900 border border-slate-600 rounded-lg text-center text-xl tracking-[0.3em] font-bold focus:border-emerald-500 outline-none text-white"
+                                    placeholder="000000">
+                            </div>
+                            <button onclick="verifyAndEnableTOTP()"
+                                class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors">
+                                启用 2FA
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="bg-white p-4 rounded-2xl shadow-2xl">
+                            <div id="qrcode"></div>
+                        </div>
+                        <p class="mt-4 text-sm text-slate-400 text-center">
+                            扫描上方二维码<br>添加到您的验证器
+                        </p>
+
+                        <div class="mt-6 w-full bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                            <h4 class="font-semibold mb-2 text-yellow-400 flex items-center gap-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                重要提示
+                            </h4>
+                            <p class="text-sm text-slate-400">
+                                请保存好您的备用恢复码。如果您丢失了设备，可以使用恢复码来恢复账户访问权限。
+                            </p>
+                            <button onclick="showBackupCodes()" class="mt-3 text-sm text-blue-400 hover:underline">
+                                查看恢复码
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-slate-700 flex justify-between">
+                    <button onclick="showSection('dashboard')"
+                        class="px-6 py-2 text-slate-400 hover:text-white transition-colors">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 修改密码 -->
+        <section id="change-password" class="hidden fade-in max-w-md mx-auto">
+            <div class="glass-panel rounded-2xl p-8 border border-slate-700 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                        <i class="fas fa-lock text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">修改密码</h2>
+                    <p class="text-slate-400 text-sm">定期更换密码以提高安全性</p>
+                </div>
+
+                <form onsubmit="handleChangePassword(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">当前密码</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-4 top-3.5 text-slate-500"></i>
+                            <input type="password" id="currentPassword" required
+                                class="w-full pl-11 pr-12 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-white">
+                            <button type="button" onclick="togglePassword('currentPassword', this)"
+                                class="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">新密码</label>
+                        <div class="relative">
+                            <i class="fas fa-key absolute left-4 top-3.5 text-slate-500"></i>
+                            <input type="password" id="newPassword" required
+                                oninput="checkPasswordStrength(this.value, 'change')"
+                                class="w-full pl-11 pr-12 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-white">
+                            <button type="button" onclick="togglePassword('newPassword', this)"
+                                class="absolute right-4 top-3.5 text-slate-500 hover:text-slate-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2 flex gap-1" id="changeStrength">
+                            <div class="flex-1 h-1 rounded-full bg-slate-700"></div>
+                            <div class="flex-1 h-1 rounded-full bg-slate-700"></div>
+                            <div class="flex-1 h-1 rounded-full bg-slate-700"></div>
+                            <div class="flex-1 h-1 rounded-full bg-slate-700"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-slate-300">确认新密码</label>
+                        <input type="password" id="confirmNewPassword" required
+                            class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-white">
+                    </div>
+
+                    <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3">
+                        <i class="fas fa-info-circle text-blue-400 mt-0.5"></i>
+                        <div class="text-sm text-blue-200">
+                            <p class="font-medium mb-1">安全提示</p>
+                            <p class="text-blue-300/80">修改密码后，所有设备上的登录状态将被清除，需要重新登录。</p>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-purple-500/25 transition-all">
+                        确认修改
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <button onclick="showSection('dashboard')"
+                        class="text-sm text-slate-400 hover:text-slate-300 flex items-center justify-center gap-2 mx-auto">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        返回仪表盘
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 邮箱验证 -->
+        <section id="email-verify" class="hidden fade-in max-w-md mx-auto">
+            <div class="glass-panel rounded-2xl p-8 border border-slate-700 shadow-2xl">
+                <div class="text-center mb-8">
+                    <div
+                        class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <i class="fas fa-envelope text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">邮箱验证</h2>
+                    <p class="text-slate-400 text-sm">验证您的邮箱地址以解锁全部功能</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700 text-center">
+                        <div
+                            class="w-20 h-20 bg-emerald-500/20 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-check-circle text-4xl text-emerald-400"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-emerald-400 mb-2">邮箱已验证</h3>
+                        <p class="text-slate-400 text-sm mb-4">user@example.com</p>
+                        <div class="text-xs text-slate-500">
+                            验证时间: 2024-01-15 14:30:22
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h4 class="font-semibold text-sm text-slate-300">验证权益:</h4>
+                        <ul class="space-y-2 text-sm text-slate-400">
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-emerald-400"></i>
+                                接收安全警报和通知
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-emerald-400"></i>
+                                使用密码重置功能
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-emerald-400"></i>
+                                启用双因素认证
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-700">
+                        <button onclick="showSection('dashboard')"
+                            class="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors">
+                            返回仪表盘
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 通知 Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div
+            class="glass-panel rounded-xl p-4 border border-slate-700 shadow-2xl flex items-center gap-3 min-w-[300px]">
+            <div id="toastIcon" class="w-10 h-10 rounded-full flex items-center justify-center">
+                <i class="fas fa-check text-white"></i>
+            </div>
+            <div>
+                <h4 id="toastTitle" class="font-semibold text-white">成功</h4>
+                <p id="toastMessage" class="text-sm text-slate-400">操作已完成</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 备用码模态框 -->
+    <div id="backupModal"
+        class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass-panel rounded-2xl p-6 max-w-lg w-full border border-slate-700 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fas fa-key text-yellow-400"></i>
+                    恢复码
+                </h3>
+                <button onclick="closeBackupModal()" class="text-slate-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-6">
+                <p class="text-sm text-yellow-200 flex items-start gap-2">
+                    <i class="fas fa-exclamation-triangle mt-0.5"></i>
+                    <span>请将这些恢复码保存在安全的地方。每个恢复码只能使用一次。</span>
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-6" id="backupCodes">
+                <!-- 动态生成 -->
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="downloadBackupCodes()"
+                    class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-download"></i>
+                    下载
+                </button>
+                <button onclick="copyBackupCodes()"
+                    class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-copy"></i>
+                    复制
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let currentUser = null;
+        let totpSecret = null;
+        let backupCodes = [];
+        let currentSection = 'login';
+
+        // 模拟数据库
+        const mockDB = {
+            users: [],
+            sessions: []
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            generateTOTPSecret();
+            startTotpTimer();
+        });
+
+        // 显示指定区块
+        function showSection(sectionId) {
+            // 隐藏所有区块
+            document.querySelectorAll('main > section').forEach(section => {
+                section.classList.add('hidden');
+            });
+
+            // 显示目标区块
+            const target = document.getElementById(sectionId);
+            if (target) {
+                target.classList.remove('hidden');
+                currentSection = sectionId;
+
+                // 特殊处理
+                if (sectionId === 'totp-setup' && !totpSecret) {
+                    generateTOTPSecret();
+                }
+            }
+        }
+
+        // 登录处理
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            // 模拟验证
+            const btn = document.getElementById('loginBtn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 验证中...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                // 检查是否需要2FA
+                const needs2FA = true; // 模拟已启用2FA
+
+                if (needs2FA) {
+                    showSection('totp-verify');
+                    document.querySelector('#totp-verify .otp-input').focus();
+                    startTotpCountdown();
+                } else {
+                    completeLogin({ email, name: email.split('@')[0] });
+                }
+
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }, 1500);
+        }
+
+        // TOTP输入处理
+        function handleTOTPInput(input, index) {
+            input.value = input.value.replace(/[^0-9]/g, '');
+
+            if (input.value.length === 1) {
+                if (index < 5) {
+                    document.querySelectorAll('#totpInputs .otp-input')[index + 1].focus();
+                } else {
+                    // 自动提交
+                    verifyTOTP();
+                }
+            }
+        }
+
+        function handleTOTPKeydown(e, index) {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                document.querySelectorAll('#totpInputs .otp-input')[index - 1].focus();
+            }
+        }
+
+        // 验证TOTP
+        function verifyTOTP() {
+            const inputs = document.querySelectorAll('#totpInputs .otp-input');
+            let code = '';
+            inputs.forEach(input => code += input.value);
+
+            if (code.length !== 6) {
+                showToast('错误', '请输入完整的6位验证码', 'error');
+                shakeElement(document.getElementById('totpInputs'));
+                return;
+            }
+
+            // 模拟验证
+            const btn = document.getElementById('verifyTotpBtn');
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>验证中...';
+
+            setTimeout(() => {
+                // 模拟成功
+                completeLogin({ email: 'user@example.com', name: 'User' });
+                btn.innerHTML = '验证并登录';
+            }, 1000);
+        }
+
+        // 完成登录
+        function completeLogin(user) {
+            currentUser = user;
+            updateAuthStatus(true);
+            showSection('dashboard');
+            showToast('欢迎回来', `登录成功，${user.name}`, 'success');
+            addActivityLog('成功登录 (2FA验证)', 'success');
+        }
+
+        // 注册流程
+        let regData = {};
+
+        function nextRegStep(step) {
+            if (step === 2) {
+                const username = document.getElementById('regUsername').value;
+                const email = document.getElementById('regEmail').value;
+                if (!username || !email) {
+                    showToast('提示', '请填写完整信息', 'warning');
+                    return;
+                }
+                regData = { username, email };
+                document.getElementById('displayEmail').textContent = email;
+            } else if (step === 3) {
+                const pwd = document.getElementById('regPassword').value;
+                const confirm = document.getElementById('regPasswordConfirm').value;
+
+                if (!validatePassword(pwd)) {
+                    showToast('错误', '密码不符合安全要求', 'error');
+                    return;
+                }
+                if (pwd !== confirm) {
+                    showToast('错误', '两次输入的密码不一致', 'error');
+                    return;
+                }
+                regData.password = pwd;
+
+                // 发送验证码
+                startResendTimer();
+            }
+
+            // 更新UI
+            document.querySelectorAll('[id^="regStep"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`regStep${step}`).classList.remove('hidden');
+
+            // 更新步骤指示器
+            document.querySelectorAll('.step-indicator').forEach((el, idx) => {
+                if (idx + 1 <= step) {
+                    el.classList.add('step-active');
+                    el.classList.remove('bg-slate-700', 'text-slate-400');
+                } else {
+                    el.classList.remove('step-active');
+                    el.classList.add('bg-slate-700', 'text-slate-400');
+                }
+            });
+        }
+
+        function prevRegStep(step) {
+            nextRegStep(step);
+        }
+
+        function completeRegistration() {
+            const code = document.getElementById('emailCode').value;
+            if (code.length !== 6) {
+                showToast('错误', '请输入6位验证码', 'error');
+                return;
+            }
+
+            showToast('成功', '注册完成！请登录', 'success');
+            showSection('login');
+        }
+
+        // 密码强度检查
+        function checkPasswordStrength(password, prefix = '') {
+            const requirements = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[^A-Za-z0-9]/.test(password)
+            };
+
+            // 更新要求列表
+            if (!prefix) {
+                updateReqItem('reqLength', requirements.length);
+                updateReqItem('reqUpper', requirements.upper);
+                updateReqItem('reqNumber', requirements.number);
+                updateReqItem('reqSpecial', requirements.special);
+            }
+
+            // 计算强度
+            let strength = Object.values(requirements).filter(Boolean).length;
+
+            // 更新强度条
+            const bars = prefix ?
+                document.querySelectorAll('#changeStrength div') :
+                [document.getElementById('strength1'), document.getElementById('strength2'),
+                document.getElementById('strength3'), document.getElementById('strength4')];
+
+            const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-emerald-500'];
+
+            bars.forEach((bar, idx) => {
+                bar.className = `flex-1 h-1 rounded-full transition-colors ${idx < strength ? colors[strength - 1] : 'bg-slate-700'}`;
+            });
+
+            return strength === 4;
+        }
+
+        function updateReqItem(id, valid) {
+            const el = document.getElementById(id);
+            const icon = el.querySelector('i');
+            if (valid) {
+                el.classList.add('text-emerald-400');
+                el.classList.remove('text-slate-500');
+                icon.className = 'fas fa-check-circle mr-2';
+            } else {
+                el.classList.remove('text-emerald-400');
+                el.classList.add('text-slate-500');
+                icon.className = 'fas fa-circle text-[6px] mr-2';
+            }
+        }
+
+        function validatePassword(pwd) {
+            return pwd.length >= 8 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd);
+        }
+
+        // TOTP功能
+        function generateTOTPSecret() {
+            // 生成随机密钥
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let secret = '';
+            for (let i = 0; i < 32; i++) {
+                secret += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            totpSecret = secret;
+
+            // 显示密钥
+            document.getElementById('totpSecret').textContent = secret.match(/.{4}/g).join(' ');
+
+            // 生成二维码
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            const otpauth = `otpauth://totp/SecureAuth:${currentUser?.email || 'user@example.com'}?secret=${secret}&issuer=SecureAuthPro`;
+
+            new QRCode(qrContainer, {
+                text: otpauth,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // 生成备用码
+            backupCodes = [];
+            for (let i = 0; i < 8; i++) {
+                backupCodes.push(Math.random().toString(36).substring(2, 10).toUpperCase());
+            }
+        }
+
+        function verifyAndEnableTOTP() {
+            const code = document.getElementById('setupTotpCode').value;
+            if (code.length !== 6) {
+                showToast('错误', '请输入6位验证码', 'error');
+                return;
+            }
+
+            showToast('成功', '双因素认证已启用', 'success');
+            document.getElementById('totpStatusText').textContent = '已启用';
+            document.getElementById('totpStatusText').className = 'text-xs text-emerald-400';
+            showBackupCodes();
+        }
+
+        function showBackupCodes() {
+            const container = document.getElementById('backupCodes');
+            container.innerHTML = '';
+            backupCodes.forEach((code, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-slate-900 rounded-lg p-3 text-center font-mono text-emerald-400 border border-slate-700';
+                div.textContent = code.match(/.{4}/g).join('-');
+                container.appendChild(div);
+            });
+            document.getElementById('backupModal').classList.remove('hidden');
+        }
+
+        function closeBackupModal() {
+            document.getElementById('backupModal').classList.add('hidden');
+            showSection('dashboard');
+        }
+
+        function copySecret() {
+            navigator.clipboard.writeText(totpSecret);
+            showToast('已复制', '密钥已复制到剪贴板', 'success');
+        }
+
+        // 修改密码
+        function handleChangePassword(e) {
+            e.preventDefault();
+            const current = document.getElementById('currentPassword').value;
+            const newPwd = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmNewPassword').value;
+
+            if (newPwd !== confirm) {
+                showToast('错误', '两次输入的新密码不一致', 'error');
+                return;
+            }
+
+            if (!validatePassword(newPwd)) {
+                showToast('错误', '新密码不符合安全要求', 'error');
+                return;
+            }
+
+            showToast('成功', '密码已更新，请重新登录', 'success');
+            setTimeout(() => {
+                logout();
+            }, 2000);
+        }
+
+        // 忘记密码
+        function handleForgotPassword(e) {
+            e.preventDefault();
+            showToast('邮件已发送', '请检查您的邮箱以重置密码', 'success');
+            setTimeout(() => {
+                showSection('login');
+            }, 2000);
+        }
+
+        // 工具函数
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        function updateAuthStatus(isLoggedIn) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            const userBtn = document.getElementById('userMenuBtn');
+
+            if (isLoggedIn) {
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                text.textContent = '已登录';
+                text.className = 'text-sm font-medium text-emerald-400';
+                userBtn.classList.remove('hidden');
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-red-500';
+                text.textContent = '未登录';
+                text.className = 'text-sm font-medium text-slate-400';
+                userBtn.classList.add('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            updateAuthStatus(false);
+            showSection('login');
+            showToast('已退出', '您已成功退出登录', 'info');
+        }
+
+        function showToast(title, message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const titleEl = document.getElementById('toastTitle');
+            const msgEl = document.getElementById('toastMessage');
+
+            const icons = {
+                success: 'fa-check',
+                error: 'fa-times',
+                warning: 'fa-exclamation',
+                info: 'fa-info'
+            };
+
+            const colors = {
+                success: 'bg-emerald-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+
+            icon.className = `w-10 h-10 rounded-full flex items-center justify-center ${colors[type]}`;
+            icon.innerHTML = `<i class="fas ${icons[type]} text-white"></i>`;
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function shakeElement(el) {
+            el.classList.add('shake');
+            setTimeout(() => el.classList.remove('shake'), 500);
+        }
+
+        function addActivityLog(action, type) {
+            const container = document.getElementById('activityLog');
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between p-3 bg-slate-800/30 rounded-lg border border-slate-700/50 fade-in';
+
+            const icons = {
+                success: 'fa-check text-emerald-400',
+                warning: 'fa-exclamation text-yellow-400',
+                error: 'fa-times text-red-400'
+            };
+
+            const now = new Date();
+            const timeStr = '刚刚';
+
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs">
+                        <i class="fas ${icons[type]}"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium">${action}</div>
+                        <div class="text-xs text-slate-500">IP: 192.168.1.1</div>
+                    </div>
+                </div>
+                <span class="text-xs text-slate-500">${timeStr}</span>
+            `;
+
+            container.insertBefore(div, container.firstChild);
+        }
+
+        function startResendTimer() {
+            let seconds = 60;
+            const btn = document.getElementById('resendBtn');
+            btn.disabled = true;
+
+            const timer = setInterval(() => {
+                seconds--;
+                btn.textContent = `重新发送 (${seconds}s)`;
+
+                if (seconds <= 0) {
+                    clearInterval(timer);
+                    btn.textContent = '重新发送';
+                    btn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        function resendCode() {
+            startResendTimer();
+            showToast('已发送', '验证码已重新发送', 'success');
+        }
+
+        function startTotpCountdown() {
+            const timerBar = document.getElementById('totpTimer');
+            const timerText = document.getElementById('timerText');
+            let seconds = 30;
+
+            const interval = setInterval(() => {
+                if (currentSection !== 'totp-verify') {
+                    clearInterval(interval);
+                    return;
+                }
+
+                seconds--;
+                const percent = (seconds / 30) * 100;
+                timerBar.style.width = percent + '%';
+                timerText.textContent = seconds;
+
+                if (seconds <= 0) {
+                    seconds = 30;
+                    // 重新生成代码提示
+                }
+            }, 1000);
+        }
+
+        function startTotpTimer() {
+            // 全局TOTP计时器
+            setInterval(() => {
+                // 更新所有TOTP显示
+            }, 1000);
+        }
+
+        function useBackupCode() {
+            const code = prompt('请输入8位备用恢复码:');
+            if (code && code.length === 8) {
+                showToast('恢复成功', '正在登录...', 'success');
+                completeLogin({ email: 'user@example.com', name: 'User' });
+            }
+        }
+
+        function downloadBackupCodes() {
+            const content = `SecureAuth Pro 恢复码\n生成时间: ${new Date().toLocaleString()}\n\n${backupCodes.join('\n')}\n\n请妥善保管这些恢复码，每个码只能使用一次。`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'secureauth-recovery-codes.txt';
+            a.click();
+        }
+
+        function copyBackupCodes() {
+            navigator.clipboard.writeText(backupCodes.join('\n'));
+            showToast('已复制', '恢复码已复制到剪贴板', 'success');
+        }
+    </script>
+</body>
+
+</html>
