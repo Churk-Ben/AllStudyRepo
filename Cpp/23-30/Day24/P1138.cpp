@@ -23,7 +23,7 @@ int main() {
   cin.tie(nullptr);
 
   //   begin
-  string pre, in;
+  string in, pre;
   cin >> in >> pre;
 
   print_postorder(0, pre.size() - 1, 0, in.size() - 1, pre, in);
