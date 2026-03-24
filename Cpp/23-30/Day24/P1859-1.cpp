@@ -8,13 +8,7 @@ vector<int> used;
 int max_len = 0;
 
 int get_overlap(const string &a, const string &b) {
-  int max_k = min(a.length(), b.length()) - 1;
-  for (int k = 1; k <= max_k; ++k) {
-    if (a.substr(a.length() - k) == b.substr(0, k)) {
-      return k;
-    }
-  }
-  return 0;
+  return a.substr(a.length() - 1) == b.substr(0, 1);
 }
 
 void dfs(string current_word, int current_len) {
@@ -32,8 +26,7 @@ void dfs(string current_word, int current_len) {
 }
 
 int main() {
-  if (!(cin >> n))
-    return 0;
+  cin >> n;
   words.resize(n);
   for (int i = 0; i < n; ++i) {
     cin >> words[i];
