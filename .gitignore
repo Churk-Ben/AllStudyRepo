@@ -149,6 +149,9 @@ logs/
 # TypeScript
 *.tsbuildinfo
 
+# Git History Backups
+.git.backup/
+
 # ==========================================
 # Security
 # ==========================================
