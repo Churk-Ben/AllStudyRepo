@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可滚动盒子内阴影效果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background-color: #f5f5f5;
+        }
+
+        .scrollable-box {
+            width: 300px;
+            height: 200px;
+            overflow-y: auto;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            
+            /* 内阴影效果 - 表示可以滚动 */
+            box-shadow: inset 0 -10px 10px -10px rgba(0, 0, 0, 0.1),
+                       inset 0 10px 10px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 当滚动到底部时隐藏底部阴影 */
+        .scrollable-box:not(.scrolled-to-bottom) {
+            box-shadow: inset 0 -10px 10px -10px rgba(0, 0, 0, 0.1),
+                       inset 0 10px 10px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 当滚动到顶部时隐藏顶部阴影 */
+        .scrollable-box.scrolled-to-top {
+            box-shadow: inset 0 -10px 10px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 当滚动到底部时隐藏底部阴影 */
+        .scrollable-box.scrolled-to-bottom {
+            box-shadow: inset 0 10px 10px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 当在中间滚动时显示两个阴影 */
+        .scrollable-box.scrolling {
+            box-shadow: inset 0 -10px 10px -10px rgba(0, 0, 0, 0.1),
+                       inset 0 10px 10px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .demo-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .demo-item {
+            text-align: center;
+        }
+
+        .demo-item h3 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        /* 更明显的内阴影效果 */
+        .scrollable-box-strong {
+            width: 300px;
+            height: 200px;
+            overflow-y: auto;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            
+            /* 更明显的内阴影 */
+            box-shadow: inset 0 -15px 15px -15px rgba(0, 0, 0, 0.2),
+                       inset 0 15px 15px -15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 渐变内阴影效果 */
+        .scrollable-box-gradient {
+            width: 300px;
+            height: 200px;
+            overflow-y: auto;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            
+            /* 渐变内阴影 */
+            background: linear-gradient(white, white),
+                       linear-gradient(to bottom, 
+                           transparent 0%, 
+                           rgba(0,0,0,0.05) 90%, 
+                           rgba(0,0,0,0.1) 100%),
+                       linear-gradient(to top, 
+                           transparent 0%, 
+                           rgba(0,0,0,0.05) 90%, 
+                           rgba(0,0,0,0.1) 100%);
+            background-attachment: local, scroll, scroll;
+            background-size: 100% 100%, 100% 20px, 100% 20px;
+            background-position: 0 0, 0 0, 0 100%;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body>
+    <h1>可滚动盒子内阴影效果演示</h1>
+    <p>内阴影效果可以很好地指示内容区域可以滚动，提供更好的用户体验。</p>
+
+    <div class="demo-container">
+        <div class="demo-item">
+            <h3>基础内阴影</h3>
+            <div class="scrollable-box" id="box1">
+                <div class="content">
+                    <p>这是一个可以滚动的盒子。</p>
+                    <p>当内容超出盒子高度时，会出现滚动条。</p>
+                    <p>内阴影效果可以提示用户这里还有更多内容。</p>
+                    <p>继续添加内容以演示滚动效果...</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                    <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                    <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+                    <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.</p>
+                    <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-item">
+            <h3>明显内阴影</h3>
+            <div class="scrollable-box-strong" id="box2">
+                <div class="content">
+                    <p>这个盒子的内阴影效果更明显。</p>
+                    <p>使用更深的阴影颜色和大一些的模糊半径。</p>
+                    <p>这样用户更容易注意到可以滚动。</p>
+                    <p>继续添加内容以演示滚动效果...</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                    <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                    <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+                    <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.</p>
+                    <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-item">
+            <h3>渐变内阴影</h3>
+            <div class="scrollable-box-gradient" id="box3">
+                <div class="content">
+                    <p>这个盒子使用渐变背景实现内阴影效果。</p>
+                    <p>渐变可以创建更自然的阴影过渡。</p>
+                    <p>提供更好的视觉效果和用户体验。</p>
+                    <p>继续添加内容以演示滚动效果...</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                    <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                    <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+                    <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.</p>
+                    <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加滚动事件监听，动态调整阴影效果
+        function setupScrollShadows(boxId) {
+            const box = document.getElementById(boxId);
+            
+            box.addEventListener('scroll', function() {
+                const scrollTop = this.scrollTop;
+                const scrollHeight = this.scrollHeight;
+                const clientHeight = this.clientHeight;
+                
+                // 移除所有滚动类
+                this.classList.remove('scrolled-to-top', 'scrolled-to-bottom', 'scrolling');
+                
+                if (scrollTop === 0) {
+                    // 滚动到顶部
+                    this.classList.add('scrolled-to-top');
+                } else if (scrollTop + clientHeight >= scrollHeight - 1) {
+                    // 滚动到底部
+                    this.classList.add('scrolled-to-bottom');
+                } else {
+                    // 在中间滚动
+                    this.classList.add('scrolling');
+                }
+            });
+            
+            // 初始化状态
+            box.dispatchEvent(new Event('scroll'));
+        }
+
+        // 为所有盒子设置滚动阴影
+        setupScrollShadows('box1');
+        setupScrollShadows('box2');
+        setupScrollShadows('box3');
+    </script>
+</body>
+</html>
