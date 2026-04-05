@@ -1,5 +1,6 @@
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 using namespace std;
 
 int main() {
@@ -10,7 +11,7 @@ int main() {
   while (T--) {
     int n;
     cin >> n;
-    int A[2000], B[2000], C[2000], D[2000];
+    vector<int> A(n), B(n), C(n), D(n);
     for (int i = 0; i < n; ++i) {
       cin >> A[i] >> B[i] >> C[i] >> D[i];
     }
@@ -23,9 +24,9 @@ int main() {
     long long ans = 0;
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-        int target = -(C[i] + D[j]);
-        if (sumAB.count(target)) {
-          ans += sumAB[target];
+        int sumCD = C[i] + D[j];
+        if (sumAB.count(-sumCD)) {
+          ans += sumAB[-sumCD];
         }
       }
     }
