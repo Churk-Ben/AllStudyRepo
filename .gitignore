@@ -80,6 +80,7 @@ dist-ssr/
 frontend/static/
 static/
 output/
+.xmake/
 
 # ==========================================
 # IDEs / Editors
