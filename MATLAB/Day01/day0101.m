@@ -3,6 +3,6 @@ imshow(Fig0222_b__cameraman_)
 
 imfinfo("Fig0222(b)(cameraman).tif")
 
-imwrite(Fig0222_b__cameraman_,"Fig0222(b)(cameraman).bmp","bmp")
-Fig0222_b__cameraman__bmp = imread("Fig0222(b)(cameraman).bmp");
+imwrite(Fig0222_b__cameraman_,".\output\Fig0222(b)(cameraman).bmp","bmp")
+Fig0222_b__cameraman__bmp = imread(".\output\Fig0222(b)(cameraman).bmp");
 imshow(Fig0222_b__cameraman__bmp)
