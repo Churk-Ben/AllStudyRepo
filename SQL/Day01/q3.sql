@@ -1,0 +1,3 @@
+SELECT *
+	FROM GoodsInfo
+	WHERE 商品类别 IN ('食品')

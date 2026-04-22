@@ -1,0 +1,3 @@
+SELECT *
+	FROM GoodsInfo
+	WHERE 生产商 LIKE '健康粮食生产基地'
