@@ -2,5 +2,5 @@
 SELECT *
 FROM dbo.GoodsInfo
 WHERE
-    商品类别 IN ('食品类', '文具类')
+    商品类别 IN ('食品', '文具')
     AND 库存量 >= 50;

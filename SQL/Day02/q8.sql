@@ -2,5 +2,5 @@
 SELECT *
 FROM dbo.GoodsInfo
 WHERE
-    商品类别 = '食品类'
-    AND 保质期 >= '2020-02-19';
+    商品类别 IN ('食品') AND 保质期 >= '2020-02-19'
+    
