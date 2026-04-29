@@ -1,3 +1,4 @@
-SELECT * 
-	FROM CustomerInfo
-	WHERE 出生日期 BETWEEN '1990-1-1' AND '1995-12-31'
+SELECT *
+FROM CustomerInfo
+WHERE
+    出生日期 BETWEEN '1990-1-1' AND '1995-12-31'
