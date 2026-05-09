@@ -18,9 +18,10 @@ int main() {
   cin.tie(nullptr);
 
   //   begin
-  int m, n;
+  int m, n, res = 0;
   cin >> m >> n;
-  cout << solve(m, n) << endl;
+  res = solve(m, n);
+  cout << res << endl;
   //   end
 
   return 0;
