@@ -1,5 +1,8 @@
 #pragma GCC optimize("Ofast")
-#include <bits/stdc++.h>
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <vector>
 using namespace std;
 
 int main() {
@@ -18,7 +21,7 @@ int main() {
   sort(cows.begin(), cows.end());
 
   priority_queue<int, vector<int>, greater<int>> pq;
-  for (auto& cow : cows) {
+  for (auto &cow : cows) {
     if (!pq.empty() && pq.top() < cow.first) {
       pq.pop();
     }
