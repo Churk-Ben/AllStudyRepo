@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -262,7 +263,7 @@ public:
 };
 
 // ============================================================
-// V3-inspired path finder
+// Level-adaptive v3 path finder
 // ============================================================
 
 constexpr int DR[] = {-1, 1, 0, 0};
@@ -275,17 +276,21 @@ int path_score_k(int k) {
 
 int path_score(const Board &board,
                const std::vector<std::pair<int, int>> &path) {
-  int k = (int)path.size(), s = path_score_k(k);
+  int k = (int)path.size();
+  int s = path_score_k(k);
   if (board.level < 4)
     return s;
+
   int N = board.N;
-  bool in_path[12][12] = {}, exploded[12][12] = {};
+  bool in_path[12][12] = {};
+  bool exploded[12][12] = {};
   for (auto [r, c] : path)
     in_path[r][c] = true;
+
   for (auto [r, c] : path) {
     if (!board.at(r, c).is_bomb())
       continue;
-    for (int dr = -1; dr <= 1; ++dr)
+    for (int dr = -1; dr <= 1; ++dr) {
       for (int dc = -1; dc <= 1; ++dc) {
         int nr = r + dr, nc = c + dc;
         if ((unsigned)nr < (unsigned)N && (unsigned)nc < (unsigned)N &&
@@ -294,34 +299,48 @@ int path_score(const Board &board,
           s += 10;
         }
       }
+    }
   }
   return s;
 }
 
+namespace v3ai {
+
+using Path = std::vector<std::pair<int, int>>;
+using Clock = std::chrono::steady_clock;
+
+struct Candidate {
+  Path path;
+  int score = 0;
+  int value = 0;
+};
+
 int mobility(const Board &board) {
-  int links = 0, wild = 0, bombs = 0, N = board.N;
-  for (int r = 0; r < N; ++r)
-    for (int c = 0; c < N; ++c) {
+  int links = 0, wild = 0, bombs = 0;
+  for (int r = 0; r < board.N; ++r) {
+    for (int c = 0; c < board.N; ++c) {
       if (board.at(r, c).is_wildcard())
         ++wild;
       if (board.at(r, c).is_bomb())
         ++bombs;
-      if (c + 1 < N) {
-        int a = board.at(r, c).color(), b = board.at(r, c + 1).color();
+      if (c + 1 < board.N) {
+        int a = board.at(r, c).color();
+        int b = board.at(r, c + 1).color();
         if (a == b || a == 0 || b == 0)
           ++links;
       }
-      if (r + 1 < N) {
-        int a = board.at(r, c).color(), b = board.at(r + 1, c).color();
+      if (r + 1 < board.N) {
+        int a = board.at(r, c).color();
+        int b = board.at(r + 1, c).color();
         if (a == b || a == 0 || b == 0)
           ++links;
       }
     }
+  }
   return links * 2 + wild * 8 + (board.level >= 4 ? bombs * 10 : 0);
 }
 
-int candidate_value(const Board &board,
-                    const std::vector<std::pair<int, int>> &path) {
+int candidate_value(const Board &board, const Path &path) {
   int low = 0, bombs = 0, wild = 0;
   for (auto [r, c] : path) {
     if (r >= board.N / 2)
@@ -335,16 +354,17 @@ int candidate_value(const Board &board,
          (int)path.size();
 }
 
-struct Candidate {
-  std::vector<std::pair<int, int>> path;
-  int score = 0, value = 0;
-};
-
-// DFS to collect candidates
 void dfs_candidates(const Board &board, int r, int c, int target_color,
-                    int max_len, std::vector<std::pair<int, int>> &cur,
-                    uint8_t used[12][12], std::vector<Candidate> &out,
-                    int hard_cap) {
+                    int max_len, int hard_cap, Path &cur, uint8_t used[12][12],
+                    std::vector<Candidate> &out, bool use_deadline,
+                    Clock::time_point deadline, bool &stop) {
+  if (stop)
+    return;
+  if (use_deadline && Clock::now() > deadline) {
+    stop = true;
+    return;
+  }
+
   cur.emplace_back(r, c);
   used[r][c] = 1;
 
@@ -357,12 +377,13 @@ void dfs_candidates(const Board &board, int r, int c, int target_color,
   }
 
   if ((int)out.size() >= hard_cap || (int)cur.size() >= max_len) {
+    if ((int)out.size() >= hard_cap)
+      stop = true;
     used[r][c] = 0;
     cur.pop_back();
     return;
   }
 
-  // v3 ordering: down(1), left(3), right(2), up(0)
   const int order[4] = {1, 3, 2, 0};
   for (int oi = 0; oi < 4; ++oi) {
     int d = order[oi];
@@ -372,8 +393,9 @@ void dfs_candidates(const Board &board, int r, int c, int target_color,
     int cc = board.at(nr, nc).color();
     if (cc == target_color || cc == 0 || target_color == 0) {
       int nt = (target_color != 0) ? target_color : cc;
-      dfs_candidates(board, nr, nc, nt, max_len, cur, used, out, hard_cap);
-      if ((int)out.size() >= hard_cap)
+      dfs_candidates(board, nr, nc, nt, max_len, hard_cap, cur, used, out,
+                     use_deadline, deadline, stop);
+      if (stop)
         break;
     }
   }
@@ -382,42 +404,45 @@ void dfs_candidates(const Board &board, int r, int c, int target_color,
   cur.pop_back();
 }
 
-std::vector<Candidate> find_candidates(const Board &board, int limit) {
+std::vector<Candidate> find_candidates(const Board &board, int limit,
+                                       double time_limit_ms = -1.0) {
   std::vector<Candidate> all;
-  int N = board.N;
   int max_len = (board.level >= 5) ? 34 : 30;
-  int hard_cap = std::max(800, limit * 6);
+  int hard_cap = std::max(1000, limit * 5);
+  bool use_deadline = time_limit_ms > 0.0;
+  auto deadline = Clock::now() + std::chrono::microseconds(
+                                     (long long)(time_limit_ms * 1000.0));
+  bool stop = false;
 
-  for (int r = 0; r < N; ++r) {
-    for (int c = 0; c < N; ++c) {
-      if ((int)all.size() >= hard_cap)
+  for (int r = 0; r < board.N; ++r) {
+    for (int c = 0; c < board.N; ++c) {
+      if (stop || (int)all.size() >= hard_cap)
         goto done;
+      Path cur;
       uint8_t used[12][12] = {};
-      std::vector<std::pair<int, int>> cur;
-      dfs_candidates(board, r, c, board.at(r, c).color(), max_len, cur, used,
-                     all, hard_cap);
+      dfs_candidates(board, r, c, board.at(r, c).color(), max_len, hard_cap,
+                     cur, used, all, use_deadline, deadline, stop);
     }
   }
 
 done:
-  std::sort(all.begin(), all.end(), [](const Candidate &a, const Candidate &b) {
-    if (a.value != b.value)
-      return a.value > b.value;
-    if (a.score != b.score)
-      return a.score > b.score;
-    return a.path.size() > b.path.size();
-  });
+  // Python keeps DFS insertion order for equal candidate_value because
+  // list.sort is stable.
+  std::stable_sort(
+      all.begin(), all.end(),
+      [](const Candidate &a, const Candidate &b) { return a.value > b.value; });
   if ((int)all.size() > limit)
     all.resize(limit);
   return all;
 }
 
 int greedy_rollout(Board board, int depth) {
-  int total = 0, discount = 100;
+  int total = 0;
+  int discount = 100;
   for (int d = 0; d < depth; ++d) {
     if (board.is_deadlocked())
       return total - 9000 / (d + 1);
-    auto paths = find_candidates(board, 1);
+    auto paths = find_candidates(board, 1, 100.0);
     if (paths.empty())
       return total - 9000 / (d + 1);
     total += paths[0].score * discount / 100;
@@ -427,45 +452,180 @@ int greedy_rollout(Board board, int depth) {
   return total + mobility(board) / 5;
 }
 
-std::vector<std::pair<int, int>> find_best_path(const Board &board) {
-  int limit = (board.level >= 5) ? 350 : 250;
-  int root_take = (board.level >= 5) ? 50 : (board.level >= 3 ? 40 : 30);
-  int depth = (board.level >= 4) ? 5 : 4;
+int greedy_beam_rollout_v2(Board board, int depth, int beam_width,
+                           int lookahead, double time_limit_ms) {
+  int total = 0;
+  int discount = 100;
+  auto deadline = Clock::now() + std::chrono::microseconds(
+                                     (long long)(time_limit_ms * 1000.0));
 
-  auto cands = find_candidates(board, limit);
-  if (cands.empty()) {
-    for (int r = 0; r < board.N; ++r)
-      for (int c = 0; c < board.N; ++c) {
-        int ac = board.at(r, c).color();
-        if (c + 1 < board.N && (ac == board.at(r, c + 1).color() || ac == 0 ||
-                                board.at(r, c + 1).color() == 0))
-          return {{r, c}, {r, c + 1}};
-        if (r + 1 < board.N && (ac == board.at(r + 1, c).color() || ac == 0 ||
-                                board.at(r + 1, c).color() == 0))
-          return {{r, c}, {r + 1, c}};
+  for (int d = 0; d < depth; ++d) {
+    if (Clock::now() > deadline)
+      break;
+    if (board.is_deadlocked())
+      return total - 9000 / (d + 1);
+
+    auto paths = find_candidates(board, beam_width, 60.0);
+    if (paths.empty())
+      return total - 9000 / (d + 1);
+
+    int best_gain = -1000000000;
+    Board best_future;
+    int best_score = 0;
+    bool has_best = false;
+
+    for (int i = 0; i < (int)paths.size() && i < beam_width; ++i) {
+      int base_score = paths[i].score;
+      Board future = board.preview(paths[i].path);
+      int gain = 0;
+
+      if (future.is_deadlocked()) {
+        gain = base_score * discount / 100 - 2000;
+      } else if (lookahead <= 1) {
+        gain = base_score * discount / 100 + mobility(future) / 4;
+      } else {
+        int future_discount = discount * 86 / 100;
+        int future_val = 0;
+        Board sim_state = future;
+        int sim_discount = future_discount;
+
+        for (int la = 0; la < lookahead; ++la) {
+          if (Clock::now() > deadline)
+            break;
+          if (sim_state.is_deadlocked()) {
+            future_val -= 3000 / (la + 1);
+            break;
+          }
+          auto la_paths = find_candidates(sim_state, 1, 40.0);
+          if (la_paths.empty()) {
+            future_val -= 3000 / (la + 1);
+            break;
+          }
+          future_val += la_paths[0].score * sim_discount / 100;
+          sim_state = sim_state.preview(la_paths[0].path);
+          sim_discount = sim_discount * 86 / 100;
+        }
+
+        future_val += mobility(sim_state) / 5;
+        gain = base_score * discount / 100 + future_val * 70 / 100;
       }
-    return {{0, 0}, {0, 1}};
+
+      if (!has_best || gain > best_gain) {
+        best_gain = gain;
+        best_future = future;
+        best_score = base_score;
+        has_best = true;
+      }
+    }
+
+    if (!has_best)
+      return total - 9000 / (d + 1);
+
+    total += best_score * discount / 100;
+    board = best_future;
+    discount = discount * 86 / 100;
   }
 
-  root_take = std::min(root_take, (int)cands.size());
+  return total + mobility(board) / 5;
+}
 
-  int best_val = -1000000000;
-  auto best_path = cands[0].path;
-  for (int i = 0; i < root_take; ++i) {
-    Board next = board.preview(cands[i].path);
-    int val = cands[i].score * 1000;
-    if (next.is_deadlocked()) {
-      val -= 4000000;
-    } else {
-      val += greedy_rollout(next, depth) * 790 + mobility(next) * 7;
+Path fallback_pair(const Board &board) {
+  for (int r = 0; r < board.N; ++r) {
+    for (int c = 0; c < board.N; ++c) {
+      int a = board.at(r, c).color();
+      if (c + 1 < board.N) {
+        int b = board.at(r, c + 1).color();
+        if (a == b || a == 0 || b == 0)
+          return {{r, c}, {r, c + 1}};
+      }
+      if (r + 1 < board.N) {
+        int b = board.at(r + 1, c).color();
+        if (a == b || a == 0 || b == 0)
+          return {{r, c}, {r + 1, c}};
+      }
     }
-    if (val > best_val) {
-      best_val = val;
+  }
+  return {{0, 0}, {0, 1}};
+}
+
+Path strategy_v3_beam_rollout(const Board &board, int cand_limit, int root_take,
+                              int rollout_depth, int rollout_beam,
+                              int rollout_lookahead, double time_limit_ms) {
+  auto deadline = Clock::now() + std::chrono::microseconds(
+                                     (long long)(time_limit_ms * 1000.0));
+  auto cands = find_candidates(board, cand_limit, time_limit_ms * 0.20);
+  if (cands.empty())
+    return fallback_pair(board);
+
+  root_take = std::min(root_take, (int)cands.size());
+  int best_val = -1000000000;
+  Path best_path = cands[0].path;
+
+  for (int i = 0; i < root_take; ++i) {
+    if (Clock::now() > deadline)
+      break;
+    Board future = board.preview(cands[i].path);
+    int total = cands[i].score * 1000;
+
+    if (future.is_deadlocked()) {
+      total -= 4000000;
+    } else {
+      int rollout = greedy_beam_rollout_v2(future, rollout_depth, rollout_beam,
+                                           rollout_lookahead, 400.0);
+      total += rollout * 790 + mobility(future) * 7;
+    }
+
+    if (total > best_val) {
+      best_val = total;
       best_path = cands[i].path;
     }
   }
 
   return best_path;
+}
+
+Path strategy_v3_merged(const Board &board, int cand_limit, int root_take,
+                        int rollout_depth, double time_limit_ms) {
+  auto deadline = Clock::now() + std::chrono::microseconds(
+                                     (long long)(time_limit_ms * 1000.0));
+  auto cands = find_candidates(board, cand_limit, time_limit_ms * 0.20);
+  if (cands.empty())
+    return fallback_pair(board);
+
+  root_take = std::min(root_take, (int)cands.size());
+  int best_val = -1000000000;
+  Path best_path = cands[0].path;
+
+  for (int i = 0; i < root_take; ++i) {
+    if (Clock::now() > deadline)
+      break;
+    Board future = board.preview(cands[i].path);
+    int total = cands[i].score * 1000;
+
+    if (future.is_deadlocked()) {
+      total -= 4000000;
+    } else {
+      int rollout = greedy_rollout(future, rollout_depth);
+      total += rollout * 790 + mobility(future) * 7;
+    }
+
+    if (total > best_val) {
+      best_val = total;
+      best_path = cands[i].path;
+    }
+  }
+
+  return best_path;
+}
+
+} // namespace v3ai
+
+std::vector<std::pair<int, int>> find_best_path(const Board &board) {
+  using namespace v3ai;
+  if (board.level <= 4) {
+    return strategy_v3_beam_rollout(board, 600, 80, 5, 3, 2, 2000.0);
+  }
+  return strategy_v3_merged(board, 1000, 120, 8, 2000.0);
 }
 
 int main() {

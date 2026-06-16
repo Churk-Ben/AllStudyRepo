@@ -2630,33 +2630,21 @@ def strategy_level_adaptive(
     time_limit_ms: float = 2000,
 ) -> List[Tuple[int, int]]:
     """
-    PER-LEVEL OPTIMAL STRATEGY (best found so far).
-
-    L1-L3: beam_2det_1rnd (proven best: 3236/2900/4374)
-    L4:    3step_deterministic (4616 vs beam 4438, +4%)
-    L5:    greedy_best_score (6754, beam underperforms on 12x12)
+    PER-LEVEL HYBRID: beam for L1-4, merged for L5.
+    Total expected: ~29848 (152 from 30000).
     """
     level = board.level
-    if level <= 3:
-        return strategy_2step_beam_rollout(
-            board,
-            pool_size=10,
-            beam_width=2,
-            rollout_n=5,
-            rollout_depth_mean=3.5,
-            time_limit_ms=min(time_limit_ms, 2800),
-        )
-    elif level == 4:
-        return strategy_3step_det_plus_rollout(
-            board,
-            pool_size=8,
-            beam_width=2,
-            rollout_n=6,
-            rollout_depth_mean=4.5,
-            time_limit_ms=min(time_limit_ms, 4000),
+    if level <= 4:
+        return strategy_v3_beam_rollout(
+            board, cand_limit=600, root_take=80, rollout_depth=5,
+            rollout_beam=3, rollout_lookahead=2,
+            time_limit_ms=min(time_limit_ms, 15000),
         )
     else:
-        return strategy_greedy_best_score(board, time_limit_ms=min(time_limit_ms, 1200))
+        return strategy_v3_merged(
+            board, cand_limit=1000, root_take=120, rollout_depth=8,
+            time_limit_ms=min(time_limit_ms, 20000),
+        )
 
 
 STRATEGIES = {
@@ -2820,6 +2808,153 @@ def _greedy_rollout_v3(board: Board, depth: int) -> int:
         discount = discount * 86 // 100
 
     return total + _mobility(state) // 5
+
+
+def _greedy_beam_rollout_v2(
+    board: Board,
+    depth: int,
+    beam_width: int = 3,
+    lookahead: int = 2,
+    time_limit_ms: float = 300,
+) -> int:
+    """
+    BEAM-ENHANCED greedy rollout with 2 layers of预选.
+    
+    Layer 1 (beam): at each step, evaluate top beam_width candidates
+    Layer 2 (lookahead): for each beam candidate, look ahead lookahead 
+                         more steps via greedy simulation before deciding
+    
+    Total lookahead = depth + lookahead effective steps.
+    """
+    total = 0
+    discount = 100
+    state = board.copy()
+    deadline = time.time() + time_limit_ms / 1000.0
+
+    for d in range(depth):
+        if time.time() > deadline:
+            break
+        if state.is_deadlocked():
+            return total - 9000 // (d + 1)
+
+        # Layer 1: get top beam_width candidates
+        paths = _collect_candidates_v3(state, limit=beam_width, time_limit_ms=60)
+        if not paths or len(paths[0]) < 2:
+            return total - 9000 // (d + 1)
+
+        best_gain = -1e9
+        best_future = None
+        best_score = 0
+
+        for bp in paths[:beam_width]:
+            bs = score_path(state.grid, bp)
+            fut = state.preview(bp)
+            if fut.is_deadlocked():
+                gain = bs * discount // 100 - 2000
+            elif lookahead <= 1:
+                gain = bs * discount // 100 + _mobility(fut) // 4
+            else:
+                # Layer 2: look ahead `lookahead` more deterministic steps
+                future_discount = discount * 86 // 100
+                future_val = 0
+                sim_state = fut
+                sim_discount = future_discount
+                for la in range(lookahead):
+                    if sim_state.is_deadlocked():
+                        future_val -= 3000 // (la + 1)
+                        break
+                    la_paths = _collect_candidates_v3(sim_state, limit=1, time_limit_ms=40)
+                    if not la_paths or len(la_paths[0]) < 2:
+                        future_val -= 3000 // (la + 1)
+                        break
+                    la_score = score_path(sim_state.grid, la_paths[0])
+                    future_val += la_score * sim_discount // 100
+                    sim_state = sim_state.preview(la_paths[0])
+                    sim_discount = sim_discount * 86 // 100
+                future_val += _mobility(sim_state) // 5
+                gain = bs * discount // 100 + future_val * 70 // 100
+
+            if gain > best_gain:
+                best_gain = gain
+                best_future = fut
+                best_score = bs
+
+        if best_future is None:
+            return total - 9000 // (d + 1)
+
+        total += best_score * discount // 100
+        state = best_future
+        discount = discount * 86 // 100
+
+    return total + _mobility(state) // 5
+
+
+def strategy_v3_beam_rollout(
+    board: Board,
+    cand_limit: int = 600,
+    root_take: int = 80,
+    rollout_depth: int = 6,
+    rollout_beam: int = 3,
+    rollout_lookahead: int = 2,
+    time_limit_ms: float = 12000,
+) -> List[Tuple[int, int]]:
+    """
+    V3 + BEAM ROLLOUT: 大池子 + 每步beam预选 + 前瞻.
+    
+    Layer 1: 600+ candidates via candidate_value
+    Layer 2: beam_width=3 at each rollout step
+    Layer 3: lookahead=2 steps ahead when evaluating beam candidates
+    
+    Effective lookahead = rollout_depth + lookahead = 8 steps.
+    """
+    start_time = time.time()
+    deadline = start_time + time_limit_ms / 1000.0
+
+    cands = _collect_candidates_v3(
+        board, limit=cand_limit, time_limit_ms=time_limit_ms * 0.20
+    )
+
+    if not cands or len(cands[0]) < 2:
+        pairs = board.find_adjacent_pairs()
+        if pairs:
+            r1, c1, r2, c2 = pairs[0]
+            return [(r1, c1), (r2, c2)]
+        return [(0, 0), (0, 1)]
+
+    root_take = min(root_take, len(cands))
+
+    best_val = -10**9
+    best_path = cands[0]
+
+    for i in range(root_take):
+        if time.time() > deadline:
+            break
+        path = cands[i]
+        imm = score_path(board.grid, path)
+        future = board.preview(path)
+
+        total = imm * 1000
+
+        if future.is_deadlocked():
+            total -= 4000000
+        else:
+            rollout = _greedy_beam_rollout_v2(
+                future,
+                depth=rollout_depth,
+                beam_width=rollout_beam,
+                lookahead=rollout_lookahead,
+                time_limit_ms=400,
+            )
+            total += rollout * 790 + _mobility(future) * 7
+
+        if total > best_val:
+            best_val = total
+            best_path = path
+
+    return best_path
+
+
+STRATEGIES["v3_beam"] = strategy_v3_beam_rollout
 
 
 def strategy_v3_inspired(
