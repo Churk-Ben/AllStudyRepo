@@ -80,7 +80,6 @@ dist-ssr/
 frontend/static/
 static/
 output/
-.xmake/
 
 # ==========================================
 # IDEs / Editors
@@ -168,3 +167,10 @@ password.txt
 # ==========================================
 *.zip
 backend/version.json
+
+
+# ==========================================
+# Build Tools
+# ==========================================
+.xmake/
+.gradle/
