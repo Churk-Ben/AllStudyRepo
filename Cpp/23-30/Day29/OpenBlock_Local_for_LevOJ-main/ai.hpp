@@ -68,34 +68,131 @@ void best_path_elem(std::vector<std::pair<std::vector<std::pair<int,int>>,int>> 
     }
 }
 
-ans find_best_path(const Board &board) {
-    int N = board.N;
-    /*候选池初始化*/
-    std::vector<std::pair<std::vector<std::pair<int,int>>,int>> rouPlen;
-    rouPlen.reserve(N*N/2);
-    best_path_elem(rouPlen , board,N);
-    // for(auto i : rouPlen){
-    //    std::vector<std::pair<std::vector<std::pair<int,int>>,int>> rouPlenNext; 
-    //    rouPlenNext.reserve(N*N/2);
-    //    best_path_elem(rouPlen ,board.preview(i.first),N);
-    //    sort(rouPlenNext.begin(),rouPlenNext.end(),[](std::pair<std::vector<std::pair<int,int>>,int> a,
-    //         std::pair<std::vector<std::pair<int,int>>,int> b){return a.second > b.second;});
-    //     double score_extra = rouPlenNext[0].second;
-    //     i.second+=score_extra;
-    // }
-    for (auto& i : rouPlen) {
-        std::vector<std::pair<std::vector<std::pair<int,int>>, int>> rouPlenNext;
-        best_path_elem(rouPlenNext, board.preview(i.first), N);
-        if (!rouPlenNext.empty()) {
-            std::sort(rouPlenNext.begin(), rouPlenNext.end(),
-                [](const auto& a, const auto& b) { return a.second > b.second; });
-            i.second += rouPlenNext[0].second;  // 累加后续最佳启发分
+void dfs(const Board& board, int r, int c, int target_color,
+         std::vector<std::pair<int, int>>& current_path,
+         std::vector<std::vector<bool>>& visited,
+         std::vector<std::vector<std::pair<int, int>>>& all_paths) {
+    
+    current_path.emplace_back(r, c);
+    visited[r][c] = true;
+
+    if (current_path.size() >= 2) {
+        all_paths.push_back(current_path);
+    }
+
+    int max_path_length = 30;
+    if (current_path.size() < max_path_length) {
+        for (int d = 0; d < 4; ++d) {
+            int nr = r + DR[d];
+            int nc = c + DC[d];
+            if (board.in_bounds(nr, nc) && !visited[nr][nc]) {
+                int cell_color = board.at(nr, nc).color();
+                if (cell_color == target_color || cell_color == 0 || target_color == 0) {
+                    int new_target = (target_color != 0) ? target_color : cell_color;
+                    dfs(board, nr, nc, new_target, current_path, visited, all_paths);
+                }
+            }
         }
     }
-    sort(rouPlen.begin(),rouPlen.end(),[](std::pair<std::vector<std::pair<int,int>>,int> a,
-    std::pair<std::vector<std::pair<int,int>>,int> b){return a.second > b.second;});
-    return rouPlen[0].first;
-    // 兜底防御机制：理论上死局评测机会结束，若未结束强制返回两格防报错1
-    return {{0, 0}, {0, 1}};
+
+    current_path.pop_back();
+    visited[r][c] = false;
+}
+
+std::vector<std::vector<std::pair<int, int>>> find_all_paths(const Board& board) {
+    std::vector<std::vector<std::pair<int, int>>> all_paths;
+    int N = board.N;
+    
+    for (int r = 0; r < N; ++r) {
+        for (int c = 0; c < N; ++c) {
+            std::vector<std::pair<int, int>> current_path;
+            std::vector<std::vector<bool>> visited(N, std::vector<bool>(N, false));
+            int target_color = board.at(r, c).color();
+            dfs(board, r, c, target_color, current_path, visited, all_paths);
+        }
+    }
+
+    std::sort(all_paths.begin(), all_paths.end(), [&board](const auto& a, const auto& b) {
+        int score_a = path_score(board, a);
+        int score_b = path_score(board, b);
+        if (score_a != score_b) {
+            return score_a > score_b;
+        }
+        return a.size() > b.size();
+    });
+
+    if (all_paths.size() > 500) {
+        all_paths.resize(500);
+    }
+
+    return all_paths;
+}
+
+ans find_best_path(const Board &board) {
+    int N = board.N;
+    
+    auto all_paths = find_all_paths(board);
+    
+    if (all_paths.empty()) {
+        return {{0, 0}, {0, 1}};
+    }
+
+    int best_total = -1;
+    std::vector<std::pair<int, int>> best_path;
+
+    int sample_size = std::min(20, (int)all_paths.size());
+    for (int i = 0; i < sample_size; ++i) {
+        const auto& path = all_paths[i];
+        int score1 = path_score(board, path);
+        Board board1 = board.preview(path);
+        
+        if (board1.is_deadlocked()) {
+            continue;
+        }
+
+        auto paths2 = find_all_paths(board1);
+        if (paths2.empty()) continue;
+        int score2 = path_score(board1, paths2[0]);
+        Board board2 = board1.preview(paths2[0]);
+        
+        if (board2.is_deadlocked()) {
+            int total = score1 + score2;
+            if (total > best_total) { best_total = total; best_path = path; }
+            continue;
+        }
+        
+        auto paths3 = find_all_paths(board2);
+        if (paths3.empty()) {
+            int total = score1 + score2;
+            if (total > best_total) { best_total = total; best_path = path; }
+            continue;
+        }
+        int score3 = path_score(board2, paths3[0]);
+        Board board3 = board2.preview(paths3[0]);
+        
+        if (board3.is_deadlocked()) {
+            int total = score1 + score2 + score3;
+            if (total > best_total) { best_total = total; best_path = path; }
+            continue;
+        }
+        
+        auto paths4 = find_all_paths(board3);
+        int score4 = 0;
+        if (!paths4.empty()) {
+            score4 = path_score(board3, paths4[0]);
+        }
+
+        int total = score1 + score2 + score3 + score4;
+        if (total > best_total) {
+            best_total = total;
+            best_path = path;
+        }
+    }
+
+    if (!best_path.empty()) {
+        return best_path;
+    }
+
+    return all_paths[0];
 }
 
