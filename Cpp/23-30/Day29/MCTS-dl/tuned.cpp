@@ -1086,18 +1086,13 @@ std::vector<std::pair<int, int>> find_best_path(const Board &board,
   if (board.N <= 1)
     return {{0, 0}, {0, 0}};
 
-  int root_limit =
-      (board.level <= 2
-           ? 300
-           : (board.level >= 5 ? 125 : (board.level == 3 ? 118 : 240)));
+  int root_limit = (board.level <= 2 ? 300 : (board.level >= 5 ? 125 : (board.level == 3 ? 118 : 240)));
   std::vector<Candidate> roots = generate_candidates(board, root_limit, false);
   if (roots.empty())
     return fallback_path(board);
 
   add_setup_roots(board, roots,
-                  board.level <= 2
-                      ? 128
-                      : (board.level >= 5 ? 36 : (board.level == 3 ? 38 : 80)));
+                  board.level <= 2 ? 128 : (board.level >= 5 ? 36 : (board.level == 3 ? 38 : 80)));
 
   int steps_left = 50 - current_step;
   if (steps_left <= 1) {
@@ -1151,10 +1146,8 @@ std::vector<std::pair<int, int>> find_best_path(const Board &board,
     beam.resize(width1);
 
   double mult = DISCOUNT;
-  int max_depth = std::min(
-      board.level <= 2 ? 8
-                       : (board.level == 3 ? 5 : (board.level >= 5 ? 4 : 6)),
-      steps_left);
+  int max_depth =
+      std::min(board.level <= 2 ? 8 : (board.level == 3 ? 5 : (board.level >= 5 ? 4 : 6)), steps_left);
 
   for (int depth = 2; depth <= max_depth; ++depth) {
     std::vector<BeamNode> next;
