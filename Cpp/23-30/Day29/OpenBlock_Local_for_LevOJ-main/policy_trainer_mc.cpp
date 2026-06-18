@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
 
     Policy policy = load_policy(filename);
     int grand = 0;
-    for (int level = 1; level <= 5; ++level) grand += play_level(level, policy);
+    for (int level = first_level; level <= last_level; ++level) grand += play_level(level, policy);
     std::cerr << "baseline " << grand << "\n";
 
     for (int pass = 1; pass <= passes; ++pass) {
@@ -259,7 +259,7 @@ int main(int argc, char** argv) {
         }
 
         grand = 0;
-        for (int level = 1; level <= 5; ++level) grand += play_level(level, policy);
+        for (int level = first_level; level <= last_level; ++level) grand += play_level(level, policy);
         std::cerr << "after pass " << pass << " score " << grand << "\n";
         save_policy(filename, policy);
         if (!changed) break;
