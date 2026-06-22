@@ -264,10 +264,14 @@ hsvImg = rgb2hsv(I);
 H = hsvImg(:,:,1); S = hsvImg(:,:,2); V = hsvImg(:,:,3);
 R = I(:,:,1); G = I(:,:,2); B = I(:,:,3);
 
-roi = false(height, width);
-rowRange = round(0.46*height):round(0.60*height);
-colRange = round(0.40*width):round(0.68*width);
-roi(rowRange, colRange) = true;
+% 用嘴部中心附近的椭圆限制候选区域，排除鼻尖和人中阴影。
+[xGrid, yGrid] = meshgrid(1:width, 1:height);
+centerX = 0.52*width;
+centerY = 0.545*height;
+radiusX = 0.19*width;
+radiusY = 0.050*height;
+roi = ((xGrid-centerX)/radiusX).^2 + ...
+      ((yGrid-centerY)/radiusY).^2 <= 1;
 redHue = H <= 0.08 | H >= 0.94;
 redness = R - 0.5*(G+B);
 lipMask = roi & redHue & S >= 0.30 & V >= 0.18 & ...
