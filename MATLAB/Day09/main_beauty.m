@@ -3,7 +3,7 @@ clear; clc; close all;
 scriptDir = fileparts(mfilename('fullpath'));
 imgPath = fullfile(scriptDir, 'portrait.jpg');
 if ~exist(imgPath, 'file')
-    imgPath = fullfile(scriptDir, '人像美颜素材.jpg');
+    imgPath = fullfile(scriptDir, '人像美颜素材2.jpeg');
 end
 if ~exist(imgPath, 'file')
     error('未找到人像图片，请将 portrait.jpg 放到当前目录。');
