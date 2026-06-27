@@ -191,15 +191,54 @@ subplot(2,4,8); imshow(I_final, []); title('最终结果');
 
 %% 10. 评价
 if hasClean
+    mseNoisy = immse(I_noisy, I_clean);
+    psnrNoisy = psnr(I_noisy, I_clean);
+    ssimNoisy = ssim(I_noisy, I_clean);
+
+    mseFreq = immse(I_freq, I_clean);
+    psnrFreq = psnr(I_freq, I_clean);
+    ssimFreq = ssim(I_freq, I_clean);
+
+    mseFinal = immse(I_final, I_clean);
+    psnrFinal = psnr(I_final, I_clean);
+    ssimFinal = ssim(I_final, I_clean);
+
     fprintf('\n===== 评价 =====\n');
     fprintf('refMix = %.2f, refDark = %.3f, blindDrop = %.3f\n', ...
         refMix, refDark, blindDrop);
 
+    fprintf('带噪图像: MSE = %.4f, PSNR = %.4f dB, SSIM = %.4f\n', ...
+        mseNoisy, psnrNoisy, ssimNoisy);
+
     fprintf('频域重建: MSE = %.4f, PSNR = %.4f dB, SSIM = %.4f\n', ...
-        immse(I_freq, I_clean), psnr(I_freq, I_clean), ssim(I_freq, I_clean));
+        mseFreq, psnrFreq, ssimFreq);
 
     fprintf('最终结果: MSE = %.4f, PSNR = %.4f dB, SSIM = %.4f\n', ...
-        immse(I_final, I_clean), psnr(I_final, I_clean), ssim(I_final, I_clean));
+        mseFinal, psnrFinal, ssimFinal);
+
+    compareFig = figure('Name', '原图-带噪图-修复图指标对比', ...
+        'Color', 'w', 'Position', [100 100 1200 420]);
+
+    subplot(1,3,1);
+    imshow(I_clean, []);
+    title({'原始清晰图'; 'MSE=0.0000, PSNR=Inf dB'; 'SSIM=1.0000'}, ...
+        'Color', 'k');
+
+    subplot(1,3,2);
+    imshow(I_noisy, []);
+    title({'带噪图像'; ...
+        sprintf('MSE=%.4f, PSNR=%.4f dB', mseNoisy, psnrNoisy); ...
+        sprintf('SSIM=%.4f', ssimNoisy)}, ...
+        'Color', 'k');
+
+    subplot(1,3,3);
+    imshow(I_final, []);
+    title({'修复图像'; ...
+        sprintf('MSE=%.4f, PSNR=%.4f dB', mseFinal, psnrFinal); ...
+        sprintf('SSIM=%.4f', ssimFinal)}, ...
+        'Color', 'k');
+
+    saveas(compareFig, 'dog_metrics_compare.png');
 end
 
 imwrite(I_freq, 'dog_nearblind_freq.png');
