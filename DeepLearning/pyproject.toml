@@ -1,0 +1,25 @@
+[project]
+name = "mnist-digit-recognition"
+version = "0.1.0"
+description = "A beginner-friendly MNIST digit classifier using PyTorch and CUDA"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pillow>=10.0,<13.0",
+    "torch==2.8.0+cu129",
+    "torchvision==0.23.0+cu129",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu129" }
+torchvision = { index = "pytorch-cu129" }
+
+[[tool.uv.index]]
+name = "pytorch-cu129"
+url = "https://download.pytorch.org/whl/cu129"
+explicit = true
+
+[[tool.uv.index]]
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
